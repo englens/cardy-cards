@@ -2,6 +2,7 @@ from abc import ABC
 import sqlite3
 from dataclasses import dataclass
 
+
 class Row:
     def __init__(self, max_size, cards=[]):
         self.cards = cards
@@ -41,6 +42,7 @@ class SqlHandler:
                  'WHERE discord_id = :did;'
         self.cursor.execute(sqlstr, {'did': discord_id})
         self.cursor.fetchone()
+
 
 @dataclass
 class PlayerSnapshot:
