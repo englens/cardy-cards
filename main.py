@@ -1,6 +1,5 @@
-from abc import ABC
-import sqlite3
-from dataclasses import dataclass
+from data_handler import SqlHandler, PlayerSnapshot
+
 
 class Row:
     def __init__(self, max_size, cards=[]):
@@ -22,41 +21,16 @@ class Row:
         return len(self.cards)
 
 
-class SqlHandler:
-    def __init__(self, db_filename):
-        self.conn = sqlite3.connect(db_filename)
-        self.cursor = self.conn.cursor()
-        
-    def create_card(self, card_type, row_id):
-        pass
-    
-    def create_player(self, name, discord_id):
-        pass
 
-    def get_players_inventory(self, player_id):
-        pass
 
-    def create_player_snapshot(self, discord_id):
-        sqlstr = 'SELECT * FROM Player' \
-                 'WHERE discord_id = :did;'
-        self.cursor.execute(sqlstr, {'did': discord_id})
-        self.cursor.fetchone()
 
-@dataclass
-class PlayerSnapshot:
-    """non-mutable class holding information about a player at a particular instance.
-    doesn't have access to player inventory, but can optionally
-    discord_id: str show player resources"""
-    sql_id: int
-    name: str
-    discord_id: str
-    resources: dict
-    max_rows: int
+
 
 
 class PlayerHandler(SqlHandler):
     def create_player(self, name, discord_id):
         sqlstring = 'INSERT INTO Player VALUES'
+
 
 class BaseCard:
     # For when card has an "action"
