@@ -21,12 +21,6 @@ class Row:
         return len(self.cards)
 
 
-
-
-
-
-
-
 class PlayerHandler(SqlHandler):
     def create_player(self, name, discord_id):
         sqlstring = 'INSERT INTO Player VALUES'
