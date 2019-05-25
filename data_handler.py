@@ -1,9 +1,8 @@
 import sqlite3
-from dataclasses import dataclass
 DEFAULT_NO_ROWS = 1
 DEFAULT_NO_CARDS = 6
 
-
+# outdated, will be deleted eventually
 class SqlHandler:
     def __init__(self, db_filename: str):
         self.conn = sqlite3.connect(db_filename)
@@ -62,7 +61,7 @@ class Player:
         sqlstr = '''SELECT (id, player_inventory_index) 
                     FROM Row
                         JOIN Player ON Player.id = Row.player_id
-                    WHERE Player.discord_id = :did'''
+                    WHERE Player.discord_id = :did;'''
         self.cursor.execute(sqlstr, {'did': self.d_id})
         results = self.cursor.fetchall()
         ordered_ids = [a[0] for a in sorted(results, key=lambda tup: tup[1])]
@@ -78,7 +77,7 @@ class Row:
     def get_current_length(self):
         sqlstr = '''SELECT count(*) FROM Card
                         JOIN Row ON Row.id=Card.row_id
-                    WHERE Row.id = :id'''
+                    WHERE Row.id = :id;'''
         self.conn.execute(sqlstr, {'id': self.id})
         return self.conn.fetchone()
 
@@ -95,25 +94,42 @@ class Row:
 
     def get_max_cards(self):
         sqlstr = '''SELECT max_cards FROM Row
-                    WHERE id=:id'''
+                    WHERE id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()
 
     # Add card to row. Throws RowFullError if row full.
     # Also sets up parameters and defaults.
     def add_card(self, type_name):
+        type_id = get_card_type_id(self.cursor, type_name)
         if self.get_current_length() >= self.get_max_cards():
             raise RowFilledError()
         sqlstr = '''INSERT INTO Card (card_type, row_id)
                     VALUES''' # TODO
 
     def remove_card(self):
-        pass # TODO
+        pass  # TODO
 
 
 class RowFilledError(Exception):
     """Raised when a card is inserted into a filled row"""
     pass
+
+
+def get_card_type_id(card_name: str, cursor):
+    sqlstr = '''SELECT (id) 
+                FROM CardType
+                WHERE name=:name;'''
+    cursor.execute(sqlstr, {'name':card_name})
+    return cursor.fetchone()
+
+
+def get_param_types(card_type_id: int, cursor):
+    sqlstr = '''SELECT (id)
+                FROM ParamType
+                WHERE card_type=:cid;'''
+    cursor.execute(sqlstr, {'cid': card_type_id})
+    return cursor.fetchall()
 
 
 # Subclass me! Does nothing on its own.
@@ -128,7 +144,7 @@ class Card:
         sqlstr = '''SELECT name 
                     FROM CardType
                         JOIN Card ON Card.card_type=CardType.id
-                    WHERE id=:id'''
+                    WHERE id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()
 
