@@ -2,33 +2,6 @@ import sqlite3
 DEFAULT_NO_ROWS = 1
 DEFAULT_NO_CARDS = 6
 
-# outdated, will be deleted eventually
-class SqlHandler:
-    def __init__(self, db_filename: str):
-        self.conn = sqlite3.connect(db_filename)
-        self.cursor = self.conn.cursor()
-
-    def create_player(self, name: str, discord_id: str):
-        sqlstring = '''INSERT INTO Player (discord_id, name, max_rows)
-                       VALUES (:did, :name, :rows);'''
-
-        self.cursor.execute(sqlstring, {'did': discord_id, 'name': name, 'rows': DEFAULT_NO_ROWS})
-
-    def create_player_snapshot(self, discord_id: str):
-        sqlstr = '''SELECT * FROM Player
-                 WHERE discord_id = :did;'''
-        self.cursor.execute(sqlstr, {'did': discord_id})
-        data = self.cursor.fetchone()  # id, did, name, max_rows
-        return PlayerSnapshot(data[0], data[2], data[1], data[3])
-
-    def create_card(self, card_type: str, player_discord_id: str, row_index: int, params):
-        card_sqlstr = '''INSERT INTO Card (card_type, location_id, param1, param2, param3, param4, param5) VALUES
-                    (:ctype, :loc_id, :p1, :p2, :p3, :p4, :p5);'''
-        self.cursor.exectute('''SELECT param1_default, param2_default, param3_default, param4_default, param5_default 
-                                FROM CardType WHERE CardType.name = :name''', {'name': card_type})
-        defaults = self.cursor.fetchone()
-        self.cursor.execute(card_sqlstr)
-
 # NEW IDEA: Each class holds no state. instead, they continually poll the db
 # then, we can treat player classes like normal players !
 
@@ -69,6 +42,7 @@ class Player:
 
 
 class Row:
+    """Area in player inventory in which cards can interact."""
     def __init__(self, sql_connection, sql_id: int):
         self.id = sql_id
         self.conn = sql_connection
@@ -101,12 +75,31 @@ class Row:
     # Add card to row. Throws RowFullError if row full.
     # Also sets up parameters and defaults.
     def add_card(self, type_name):
-        type_id = get_card_type_id(self.cursor, type_name)
         if self.get_current_length() >= self.get_max_cards():
             raise RowFilledError()
-        sqlstr = '''INSERT INTO Card (card_type, row_id)
-                    VALUES''' # TODO
+        # Find card type id, and param type ids
+        card_type_id = get_card_type_id(self.cursor, type_name)
+        param_type_ids = get_param_types(card_type_id, self.cursor)
+        # construct list of param insert data based on default values
+        param_inserts = []
+        for p_type in param_type_ids:
+            param_inserts.append({'val':  get_param_type_default(p_type, self.cursor),
+                                  'c_id': card_type_id,
+                                  't_id': p_type})
+        # sql strings
+        card_sql = '''INSERT INTO Card (card_type, row_id)
+                      VALUES (:c_type, :rid);'''
+        param_sql = '''INSERT INTO Param (value, card_id, type_id)
+                       VALUES (:val, :c_id, :t_id);'''
+        # insert new rows to database
+        self.cursor.execute(card_sql, {'c_type': card_type_id, 'rid': self.id})
+        self.cursor.executemany(param_sql, param_inserts)
+        self.conn.commit()
 
+    # Plan:
+    # 1 - throw err if card not found
+    # 2 - remove all param rows
+    # 3 - remove card row
     def remove_card(self):
         pass  # TODO
 
@@ -125,6 +118,7 @@ def get_card_type_id(card_name: str, cursor):
 
 
 def get_param_types(card_type_id: int, cursor):
+    """Returns a list of ParamType PKs for given card type"""
     sqlstr = '''SELECT (id)
                 FROM ParamType
                 WHERE card_type=:cid;'''
@@ -132,8 +126,22 @@ def get_param_types(card_type_id: int, cursor):
     return cursor.fetchall()
 
 
+def get_param_type_default(param_id, cursor):
+    sqlstr = '''SELECT (default)
+                FROM ParamType
+                WHERE id=:pid;'''
+    cursor.execute(sqlstr, {'pid': param_id})
+    return cursor.fetchall()
+
+
+def create_card_from_type_id(type_id, row_id):
+    pass  # TODO, might keep to Row
+
+
 # Subclass me! Does nothing on its own.
 # These methods should handle all the sql; subclasses can just use them
+# Card classes should be used whenever cards are being worked with.
+# Ca
 class Card:
     def __init__(self, sql_connection, sql_id: int):
         self.id = sql_id
@@ -181,6 +189,8 @@ class Card:
 
 # example, TODO
 class SimplePassiveGenerator(Card):
+    """Example card functionality class that generates 1 money per hour.
+       Holds 50 money."""
     def use(self):
         pass
 
