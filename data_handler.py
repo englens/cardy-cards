@@ -120,7 +120,7 @@ def get_card_type_id(card_name: str, cursor):
     sqlstr = '''SELECT (id) 
                 FROM CardType
                 WHERE name=:name;'''
-    cursor.execute(sqlstr, {'name':card_name})
+    cursor.execute(sqlstr, {'name': card_name})
     return cursor.fetchone()
 
 
