@@ -31,3 +31,65 @@ Vehicles -> IFuelValuesCalculator
 |                             |
 |                 Food: 1/100 |
 +-----------------------------+
+
+```
++-----------------------------+
+| Gaurd                  CMMN |
+|                             |
+|             O  ^            |
+|           / | \|            |
+|            / \              |
+| Passive:  Creates 5 babies, |
+| steal your food             |
+|                             |
+| Block 1 attempt             |
++-----------------------------+```
+
+```
++-----------------------------+
+| N-word pass            RARE |
+|                             |
+|           N                 |
+|                             |
+|                             |
+|                             |
+| Passive: Cards in this row  |
+| can send N-words.           |
+|                             |
++-----------------------------+```
+
+
++-----------------------------+
+| N-word pass      Nigga-rare |
+|                             |
+|        ---       ---        |
+|       |   |\    |   |       |
+|       |   | \   |   |       |
+|       |   |\ \  |   |       |
+|       |   | \ \ |   |       |
+|       |   |  \ \|   |       |
+|       |   |   \ |   |       |
+|       |   |    \|   |       |
+|        ---       ---        |
+|                             |
+| OnBuy: Say the N word. Get  |
+|   arrested.                 |
+|                             |
++-----------------------------+
+Price: 69696 money at Dutch_Market
+
+```
+Shop: Virginia Slave Market
+"Buy somthin', will ya!"
++-----------------------------+
+1)  Shitty Farmer         100 money
+2)  Farm                  5 Hoes, 100 Dirt
+3)  Seed                  1 money
++-----------------------------+
+
+Commands:
+examine <N>: look at card <Card>
+buy <N>: buy 1 of card <Card>
+buy <X> <Card>: buy <X> of card <Card>
+exit: leave the shop
+```
