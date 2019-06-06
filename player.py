@@ -45,7 +45,15 @@ class Player:
         return Row(self.conn, row_id)
 
 
-def create_new_player(sql_conn, discord_id: str, server_id: str, nickname: str):
+def register_new_player(sql_conn, discord_id: str, server_id: str, nickname: str):
     sqlstr = '''INSERT INTO Player (discord_id, server_id, name, max_rows)
                 VALUES (:did, :s_id, :name, :max_rows);'''
     # TODO
+
+
+def get_player(discord_id, sql_conn):
+    sqlstr = '''SELECT id FROM Player
+                WHERE Player.discord_id = :did;
+             '''
+    sql_conn.execute(sqlstr, {'did': discord_id})
+    return Player(sql_conn, sql_conn.fetchone()[0])

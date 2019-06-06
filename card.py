@@ -80,28 +80,37 @@ class Param:
                     FROM Param
                     WHERE Param.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
-        return self.cursor.fetchone()
+        return self.cursor.fetchone()[0]
 
     def set_val(self, new_value):
-        sqlstr = """UPDATE Param
+        sqlstr = '''UPDATE Param
                     SET value=:newval
-                    WHERE Param.id=:id;"""
+                    WHERE Param.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id, 'newval': new_value})
         self.conn.commit()
 
+    # name fixed
     def get_name(self):
         sqlstr = '''SELECT name
                     FROM ParamType
                         JOIN Param ON Param.type_id=ParamType.id
                     WHERE Param.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
-        return self.cursor.fetchone()
+        return self.cursor.fetchone()[0]
 
+    # almost always same as default, but functionality is there to change it
+    def is_visible(self):
+        sqlstr = '''SELECT visible
+                    FROM Param
+                    WHERE Param.id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()[0]
+
+    # almost always same as default, but functionality is there to change it
     def get_max(self):
         """For non-number params, max is null"""
         sqlstr = '''SELECT max
-                    FROM ParamType
-                    JOIN Param ON Param.type_id=ParamType.id
+                    FROM Param
                     WHERE Param.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
-        return self.cursor.fetchone()
+        return self.cursor.fetchone()[0]
