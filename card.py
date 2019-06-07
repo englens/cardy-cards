@@ -18,13 +18,37 @@ class Card:
         sqlstr = '''SELECT name 
                     FROM CardType
                         JOIN Card ON Card.card_type=CardType.id
-                    WHERE id=:id;'''
+                    WHERE Card.id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()
+
+    def get_art(self):
+        sqlstr = '''SELECT art 
+                    FROM CardType
+                        JOIN Card ON Card.card_type=CardType.id
+                    WHERE Card.id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()
+
+    def get_rarity(self):
+        sqlstr = '''SELECT rarity 
+                    FROM CardType
+                        JOIN Card ON Card.card_type=CardType.id
+                    WHERE Card.id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()
+
+    def get_description(self):
+        sqlstr = '''SELECT description
+                    FROM CardType
+                        JOIN Card on Card.card_type=CardType.id
+                    WHERE Card.id=:id'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()
 
     def destroy(self):
         sqlstr = '''DELETE FROM Card
-                    WHERE id=:sql_id;'''
+                    WHERE Card.id=:sql_id;'''
         # TODO: Set this to drop cascade the params
         self.cursor.execute(sqlstr, {'sql_id': self.id})
         self.conn.commit()
@@ -39,6 +63,13 @@ class Card:
                     AND Card.id = :id;'''
         self.cursor.execute(sqlstr, {'name': name, 'id': self.id})
         return Param(self.cursor.fetchone(), self.conn)
+
+    def get_all_params(self):
+        sqlstr = '''SELECT Param.id
+                    FROM Param
+                    WHERE Param.card_id = :id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return [Param(a, self.conn) for a in self.cursor.fetchall()]
 
     # Can be also done from the param class, but this is faster if we don't need any info about it
     def set_param(self, name, new_value):
@@ -60,6 +91,52 @@ class Card:
 
     def use(self, *args, **kwargs):
         pass
+
+    def render(self):
+        """Returns a string representing the ascii image of this card."""
+        art_lines = self.get_art().split('\n')
+        name = self.get_name()
+        rarity = self.get_rarity()
+        desc = self.get_description().split('\n')
+        top__art_line  = art_lines[0]
+        mid_art_lines = art_lines[1:-1]
+        bot_art_line  = art_lines[-1]
+        # Header
+        render = '+' + '-'*38 + '+\n'
+        render += r'| {}{}{} |'.format(name,
+                                       ' '*(36-(len(name) + len(rarity))),
+                                       rarity) + '\n'
+        render += '|' + ' '*38 + ' \n'
+        # Art
+        render += '|  /' + '-'*32 + r'\  |' + '\n'
+        render += '| /' + top__art_line + r'\ |' + '\n'
+        for line in mid_art_lines:
+            render += '| |' + line + '| |\n'
+        render += '| \\' + bot_art_line + '/ |\n'
+        render += '|  \\' + '-'*32 + '/  |' + '\n'
+        # Description
+        desc_h_space = 38
+        description_lines = []
+        for line in desc:
+            line_split = [line[i:i+desc_h_space] for i in range(0, len(line), desc_h_space)]
+            description_lines += line_split
+        for line in description_lines:
+            if len(line) < desc_h_space:
+                render += '|' + line + ' '*(desc_h_space-len(line)) + '|\n'
+            else:
+                render += '|' + line + '|\n'
+        render += '|' + ' '*38 + ' \n'
+        # Footer
+        for param in self.get_all_params():
+            if param.is_visible():
+                val = param.get_val()
+                if type(val) in [int, float]:
+                    paramtext = param.get_name() + ': ' + val + '/' + param.get_max()
+                else:
+                    paramtext = val
+                render += '|' + ' '*(37-len(paramtext)) + paramtext + ' |'
+        render = '+' + '-'*38 + '+\n'
+        return render
 
 
 class Param:
