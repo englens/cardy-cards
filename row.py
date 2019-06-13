@@ -1,4 +1,5 @@
 from card import Card
+ROW_WINDOW_WIDTH = 40
 
 
 class Row:
@@ -8,29 +9,43 @@ class Row:
         self.conn = sql_connection
         self.cursor = self.conn.cursor()
 
-    def validate(self):
+    def validate(self) -> bool:
         sqlstr = '''SELECT EXISTS(SELECT 1 FROM Row WHERE id = :id);'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_current_length(self):
+    def destroy(self):
+        for card in self.get_all_cards():
+            card.destroy()
+        sqlstr = '''DELETE FROM Row
+                    WHERE Row.id = :id;'''
+        self.cursor.execute(sqlstr)
+        self.conn.commit()
+
+    def get_current_length(self) -> int:
         sqlstr = '''SELECT count(*) FROM Card
                         JOIN Row ON Row.id=Card.row_id
                     WHERE Row.id = :id;'''
         self.conn.execute(sqlstr, {'id': self.id})
-        return self.conn.fetchone()
+        return self.conn.fetchone()[0]
 
-    def get_name(self):
-        sqlstr = '''SELECT name FROM Row
+    def get_alias(self) -> str:
+        sqlstr = '''SELECT alias FROM Row
                     WHERE id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
-        return self.cursor.fetchone()
+        return self.cursor.fetchone()[0]
 
-    def get_max_cards(self):
+    def get_index(self) -> int:
+        sqlstr = '''SELECT inventory_index FROM Row
+                    WHERE id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()[0]
+
+    def get_max_cards(self) -> int:
         sqlstr = '''SELECT max_cards FROM Row
                     WHERE id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
-        return self.cursor.fetchone()
+        return self.cursor.fetchone()[0]
 
     def get_card(self, index: int) -> Card:
         sqlstr = '''SELECT id FROM Card
@@ -40,9 +55,17 @@ class Row:
         card_id = self.cursor.fetchone()[0]
         return Card(self.conn, card_id)
 
+    def get_all_cards(self) -> list:
+        """Return all cards in ascending order"""
+        sqlstr = '''SELECT id FROM Card
+                    WHERE Card.row_id=:rid;
+                    ORDER BY Card.row_index ASC;'''
+        self.cursor.execute(sqlstr, {'rid': self.id})
+        return [Card(self.conn, i[0]) for i in self.cursor.fetchall()]
+
     # Add card to row. Throws RowFullError if row full.
     # Also sets up parameters and defaults.
-    def add_card(self, type_name: str):
+    def add_card(self, type_name: str) -> Card:
         curr_length = self.get_current_length()  # stored to save sql time
         if curr_length >= self.get_max_cards():
             raise RowFilledError()
@@ -64,24 +87,28 @@ class Row:
         self.cursor.execute(card_sql, {'r_index': curr_length, 'c_type': card_type_id, 'rid': self.id})
         self.cursor.executemany(param_sql, param_inserts)
         self.conn.commit()
+        return self.get_card(curr_length)
 
     # Plan:
     # 1 - throw err if card not found
     # 2 - remove all param rows
     # 3 - remove card row
     def remove_card(self, index):
+        """Remove a card from the row, deleting it from the database."""
         self.get_card(index).destroy()
-        sqlstr = '''UPDATE Param
-                            SET value=:newval
-                            WHERE id IN 
-                            (
-                                SELECT id FROM Param
-                                    JOIN Card ON Card.id=Param.card_id
-                                    JOIN ParamType ON ParamType.id=Param.type_id
-                                WHERE Card.id=:id
-                                AND ParamType.name=:name
-                            );'''
-        # TODO
+
+    def render(self):
+        alias = self.get_alias()
+        no_dashes = ROW_WINDOW_WIDTH - len(alias) - 8
+
+        render = '-'*(no_dashes//2) + 'Row ' + self.get_index() + '-'*(no_dashes//2) + '\n'
+        if alias is not None:
+            render += '('+alias+')'
+        render += '--------------------------\n'
+        for i, card in enumerate(self.get_all_cards()):
+            render += str(i) + ') ' + card.get_name() + '\n'
+        render += '-'*no_dashes
+        return render
 
 
 class RowFilledError(Exception):
@@ -89,26 +116,26 @@ class RowFilledError(Exception):
     pass
 
 
-def get_card_type_id(card_name: str, cursor):
+def get_card_type_id(card_name: str, cursor) -> int:
     sqlstr = '''SELECT (id) 
                 FROM CardType
                 WHERE name=:name;'''
     cursor.execute(sqlstr, {'name': card_name})
-    return cursor.fetchone()
+    return cursor.fetchone()[0]
 
 
-def get_param_types(card_type_id: int, cursor):
+def get_param_types(card_type_id: int, cursor) -> list:
     """Returns a list of ParamType PKs for given card type"""
     sqlstr = '''SELECT (id)
                 FROM ParamType
                 WHERE card_type=:cid;'''
     cursor.execute(sqlstr, {'cid': card_type_id})
-    return cursor.fetchall()
+    return [i[0] for i in cursor.fetchall()]
 
 
-def get_param_type_default(param_id, cursor):
+def get_param_type_default(param_id, cursor) -> list:
     sqlstr = '''SELECT (default)
                 FROM ParamType
                 WHERE id=:pid;'''
     cursor.execute(sqlstr, {'pid': param_id})
-    return cursor.fetchall()
+    return [i[0] for i in cursor.fetchall()]

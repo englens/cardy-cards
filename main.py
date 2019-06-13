@@ -1,14 +1,27 @@
-# lol, TODO
 import asyncio
 import discord
 import sqlite3
+
 import player
+from bot_utils import *
+import player_state as p_state
+
+# CONSTANTS
 BOT_ID = ''
 DEFAULT_MESSAGE_DELAY = 2
 DEFAULT_NEW_PLAYER_CARD = 'money button'
+KEY_PATH = 'key.txt'
+
+# GLOBALS
 conn = sqlite3.connect('test_db.db')
+players_in_session = []
 
 client = discord.Client()
+
+
+@client.event
+def on_ready():
+    print('Ready.')
 
 
 @client.event
@@ -18,62 +31,78 @@ async def on_message(message: discord.Message):
     session_player = player.get_player(conn, message.author.id)
     if session_player is None:
         await message.channel.send('Please create an account with !join')
-
-
-async def ask_loop(message: discord.Message, question: str, responses: list,
-                   restated_question: str = None, tries: int = -1,
-                   timeout: int = 60, case_sensitive=False) -> str:
-    """
-    Asks for a response. Will keep asking until a correct response is given, the message times out,
-    or the user runs out of tries.
-    Parameters:
-        message: Discord Message from the player in the correct channel.
-        question: The question to ask.
-        restated_question: A (shortened) form when repeating the question.
-        tries: How many times to try asking before giving up. If set to -1, will try forever.
-        timeout: How long to wait before giving up. In seconds.
-        responses: List of valid responses.
-        case_sensitive: if no, all responses are converted to lowercase.
-    """
-    message.channel.send(question)
-
-    def check(m: discord.Message):
-        return m.author == message.author and m.channel == message.channel
-
-    if restated_question is None:
-        restated_question = question
-    while 1:
-        msg = await message.channel.wait_for('message', check=check, timeout=timeout)
-        if case_sensitive:
-            if msg.content in responses:
-                return msg.content
+        return
+    if not message.content.startswtih('!'):
+        return
+    # Block player from being handled twice at once
+    players_in_session.append(session_player)
+    terms = message.content[1:].split(' ')
+    command = terms[0]
+    if len(terms) > 1:
+        terms = terms[1:]
+    terms = terms[1:]
+    if command == 'inventory':
+        await inventory_command(message, session_player)
+    elif command == 'row':
+        await row_command(message, session_player, int(terms[0]))
+    elif command == 'select':
+        if len(terms) == 2:
+            await select_command(message, session_player, int(terms[0]), int(terms[1]))
         else:
-            if msg.content.lower() in responses:
-                return msg.content
-        tries -= 1
-        if tries == 0:
-            raise asyncio.TimeoutError('Out of tries')
-        message.channel.send(restated_question)
+            await select_command(message, session_player, int(terms[0]))
+    elif command == 'card':
+        await card_command(message, session_player, terms[0], terms[1])
+    elif command == 'help':
+        pass
+    else:
+        pass
+    players_in_session.remove(session_player)
 
 
-async def yes_or_no(message: discord.Message, question: str,
-                    restated_question: str = None, tries: int = -1, timeout: int = 60):
-    """Special case of ask_loop, to ask a yes or no question. Do not include the (y/n) in the message."""
-    question += ' (y/n)'
-    restated_question += ' (y/n)'
-    yeses = ['yes', 'y', 'yep', 'ye', 'yep', 'yeet']
-    nos = ['no', 'n', 'nope', 'nada']
-    response = await ask_loop(message, question, yeses+nos, restated_question, tries, timeout)
-    if response in yeses:
-        return 'yes'
-    return 'no'
+async def inventory_command(message: discord.Message, session_player: player.Player):
+    msg = '```'+session_player.render()+'```'
+    await message.channel.send(msg)
+    p_state.set_player_state(session_player.get_discord_id(), p_state.InventoryState())
 
 
-async def player_input(message: discord.Message, question: str, timeout: int = 60):
-    """Asks for a response to given question."""
-    def check(m):
-        return m.channel == message.channel and m.author == message.author
-    return message.channel.wait_for(question, check=check, timeout=timeout)
+async def row_command(message: discord.Message, session_player: player.Player, row_index: int):
+    msg = '```'+session_player.get_row(row_index).render()+'```'
+    await message.channel.send(msg)
+    p_state.set_player_state(session_player.id, p_state.RowState(row_index))
+
+
+async def card_command(message: discord.Message, session_player: player.Player, row_index: int, card_index: int):
+    msg = '```'+session_player.get_row(row_index).get_card(card_index).render()+'```'
+    await message.channel.send(msg)
+    p_state.set_player_state(session_player.id, p_state.CardState(row_index, card_index))
+
+
+async def shop_command(message: discord.Message, session_player: player.Player, shop_index):
+    pass  # TODO: show shop (need to implement first)
+
+
+async def shop_menu_command(message: discord.Message, session_player: player.Player):
+    pass  # TODO: show shop menu(need to implement first)
+
+
+async def select_command(message: discord.Message, session_player: player.Player, param1: int, param2: int=None):
+    state = p_state.get_player_state(session_player.id)
+    if isinstance(state, p_state.RowState):  # Browsing 1 row
+        await card_command(message, session_player, state.row_index, param1)
+    elif isinstance(state, p_state.InventoryState):  # Looking at all rows
+        await row_command(message, session_player, param1)
+    elif isinstance(state, p_state.ShopMenuState):  # Looking at all shops
+        pass  # TODO
+    elif isinstance(state, p_state.ShopState):  # Browsing 1 shop
+        pass  # TODO
+    else:
+        msg = 'Nothing to select!'
+        await message.channel.send(msg)
+
+
+async def help_command(message: discord.Message, session_player: player.Player):
+    pass
+    # TODO: Show general help menu, and state specific help if applicable
 
 
 async def player_creation(message):
@@ -146,7 +175,7 @@ async def tutorial(message, session_player: player.Player):
     channel.send('That should be enough for you to learn the ropes. Feel free to ask around for help, ' +
                  'and type !help to show the command list. Good luck!')
 
-
-@client.event
-def on_ready():
-    print('Ready.')
+if __name__ == '__main__':
+    with open(KEY_PATH, 'r') as f:
+        key = f.read()
+    client.run(key)
