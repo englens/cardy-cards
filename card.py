@@ -1,6 +1,7 @@
-# Subclass me! Does nothing on its own.
-# These methods should handle all the sql; subclasses can just use them
-# Card classes should be used whenever cards are being worked with.
+from collections import namedtuple
+
+ParamType = namedtuple('ParamType', ['name', 'val_default', 'max_default', 'visible_default', 'card_type'])
+
 
 class Param:
     """Represents one card parameter. Can access parameter:
@@ -56,11 +57,28 @@ class Param:
         return self.cursor.fetchone()[0]
 
 
+# Subclass me! Does nothing on its own.
+# These methods should handle all the sql; subclasses can just use them
+# Card classes should be used whenever cards are being worked with.
 class Card:
     def __init__(self, sql_connection, sql_id: int):
         self.id = sql_id
         self.conn = sql_connection
         self.cursor = self.conn.cursor()
+
+    ## INTERFACE ##
+    def passive(self, t):
+        pass
+
+    def use(self):
+        pass
+
+    @staticmethod
+    def get_param_types() -> list:
+        """returns list of param type namedtuples.
+           Subclasses should invoke and add to super."""
+        return []
+    ################
 
     def validate(self) -> bool:
         sqlstr = '''SELECT EXISTS(SELECT 1 FROM Card WHERE id = :id);'''
@@ -146,12 +164,6 @@ class Card:
         self.cursor.execute(sqlstr, {'name': name, 'id': self.id, 'newval': new_value})
         self.conn.commit()
 
-    def passive(self, *args, **kwargs):
-        pass
-
-    def use(self, *args, **kwargs):
-        pass
-
     def render(self) -> str:
         """Returns a string representing the ascii image of this card."""
         art_lines = self.get_art().split('\n')
@@ -197,3 +209,20 @@ class Card:
                 render += '|' + ' '*(37-len(paramtext)) + paramtext + ' |'
         render = '+' + '-'*38 + '+\n'
         return render
+
+
+class ExampleBasicCard(Card):
+    """Simple card that gives you 1 money when you press it.
+        Params:
+            Money: Increases by 1 each use. Max 100"""
+    def use(self):
+        pass
+
+    def passive(self, t):
+        pass
+
+    @staticmethod
+    def get_param_types() -> list:
+        ptypes = super().get_param_types()
+        ptypes.append(ParamType('Money', 0, 100, True, #TODO get card type id))
+        return ptypes
