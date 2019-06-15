@@ -20,7 +20,7 @@ client = discord.Client()
 
 
 @client.event
-def on_ready():
+async def on_ready():
     print('Ready.')
 
 
@@ -28,11 +28,11 @@ def on_ready():
 async def on_message(message: discord.Message):
     if message.author.bot:
         return
+    if not message.content.startswith('!'):
+        return
     session_player = player.get_player(conn, message.author.id)
     if session_player is None:
         await message.channel.send('Please create an account with !join')
-        return
-    if not message.content.startswtih('!'):
         return
     # Block player from being handled twice at once
     players_in_session.append(session_player)
