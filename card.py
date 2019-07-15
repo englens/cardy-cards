@@ -16,6 +16,9 @@ class Param:
         self.conn = conn
         self.cursor = conn.cursor()
 
+    def __eq__(self, other):
+        return self.id == other.id and type(self) == type(other)
+
     def get_val(self):
         sqlstr = '''SELECT value
                     FROM Param
@@ -66,6 +69,9 @@ class Card:
         self.conn = sql_connection
         self.cursor = self.conn.cursor()
 
+    def __eq__(self, other):
+        return self.id == other.id and type(self) == type(other)
+
     ## INTERFACE ##
     def passive(self, t):
         pass
@@ -88,7 +94,7 @@ class Card:
     def get_name(self) -> str:
         sqlstr = '''SELECT name 
                     FROM CardType
-                        JOIN Card ON Card.card_type=CardType.id
+                        JOIN Card ON Card.card_type_id=CardType.id
                     WHERE Card.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
@@ -96,7 +102,7 @@ class Card:
     def get_art(self) -> str:
         sqlstr = '''SELECT art 
                     FROM CardType
-                        JOIN Card ON Card.card_type=CardType.id
+                        JOIN Card ON Card.card_type_id=CardType.id
                     WHERE Card.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
@@ -104,7 +110,7 @@ class Card:
     def get_rarity(self) -> str:
         sqlstr = '''SELECT rarity 
                     FROM CardType
-                        JOIN Card ON Card.card_type=CardType.id
+                        JOIN Card ON Card.card_type_id=CardType.id
                     WHERE Card.id=:id;
                  '''
         self.cursor.execute(sqlstr, {'id': self.id})
@@ -113,13 +119,13 @@ class Card:
     def get_description(self) -> str:
         sqlstr = '''SELECT description
                     FROM CardType
-                        JOIN Card on Card.card_type=CardType.id
+                        JOIN Card on Card.card_type_id=CardType.id
                     WHERE Card.id=:id
                  '''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def destroy(self):
+    def delete(self):
         sqlstr = '''DELETE FROM Card
                     WHERE Card.id=:id;
                  '''
@@ -132,14 +138,14 @@ class Card:
         self.conn.commit()
 
     # THANK GOD FOR BLOBS
-    def get_param(self, name) -> Param:
+    def get_param(self, param_name) -> Param:
         sqlstr = '''SELECT Param.id
                     FROM Param
                         JOIN Card ON Card.id = Param.card_id
                         JOIN ParamType ON ParamType.id = Param.type_id
                     WHERE ParamType.name=:name
                     AND Card.id = :id;'''
-        self.cursor.execute(sqlstr, {'name': name, 'id': self.id})
+        self.cursor.execute(sqlstr, {'name': param_name, 'id': self.id})
         return Param(self.cursor.fetchone()[0], self.conn)
 
     def get_all_params(self) -> list:
@@ -208,13 +214,13 @@ class Card:
                     paramtext = val
                 render += '|' + ' '*(37-len(paramtext)) + paramtext + ' |'
         render = '+' + '-'*38 + '+\n'
-        return render
+        return '```' + render + '```'
 
-
+"""
 class ExampleBasicCard(Card):
-    """Simple card that gives you 1 money when you press it.
+    """"""Simple card that gives you 1 money when you press it.
         Params:
-            Money: Increases by 1 each use. Max 100"""
+            Money: Increases by 1 each use. Max 100""""""
     def use(self):
         pass
 
@@ -226,3 +232,5 @@ class ExampleBasicCard(Card):
         ptypes = super().get_param_types()
         ptypes.append(ParamType('Money', 0, 100, True, #TODO get card type id))
         return ptypes
+"""
+
