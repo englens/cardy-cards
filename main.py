@@ -152,12 +152,14 @@ async def tutorial(message, session_player: player.Player):
                            'As a new player, you only have 1 row.')
         await asyncio.sleep(DEFAULT_MESSAGE_DELAY)
         await pinput.ask_loop('Pull it up with !select 1.', ['!select 1'])
-        # TODO Display rows
+        session_row = session_player.get_row(0)
+        await channel.send(session_row.render())
         await channel.send('As you can see, you only have 1 card in this row. Each row can have a maximum of 12 cards. ' +
                            'In the future, you can quickly pull up a row at any time with !row <index>.')
         await asyncio.sleep(DEFAULT_MESSAGE_DELAY)
         await pinput.ask_loop('Now, pull up your first card with !select 1.', ['!select 1'])
-        # TODO: Display the card
+        session_card = session_row.get_card(0)
+        await channel.send(session_card.render())
         await channel.send('As you can see, Each card has a Name, a Rarity(Top right), a description, ' +
                            'and resources(on the bottom).')
         await asyncio.sleep(DEFAULT_MESSAGE_DELAY)
@@ -170,7 +172,8 @@ async def tutorial(message, session_player: player.Player):
         await channel.send('Each card either does these things passively, when activated with !use, or both.')
         await asyncio.sleep(DEFAULT_MESSAGE_DELAY)
         await pinput.ask_loop('To "use" a card, Type !use. Try it now.', ['!use'], 'Type !use to use this card.')
-        # TODO: show the changed card
+        await channel.send(session_card.use())
+        await channel.send(session_card.render())
         await channel.send('Look. Now you have 1 money.')
         await asyncio.sleep(DEFAULT_MESSAGE_DELAY)
         await pinput.ask_loop('Next, check out the shop menu. Type !shop.',
