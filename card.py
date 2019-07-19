@@ -11,6 +11,7 @@ class Param:
         Can also change the card value, but cards can also do this themselves to take advantage
         of sql speed.
     """
+
     def __init__(self, sql_id: int, conn):
         self.id = sql_id
         self.conn = conn
@@ -90,6 +91,7 @@ class Card:
         """returns list of ParamDefinitions for each param.
            Subclasses should invoke and add to super."""
         return []
+
     ################
 
     def validate(self) -> bool:
@@ -177,50 +179,7 @@ class Card:
         self.conn.commit()
 
     def render(self) -> str:
-        """Returns a string representing the ascii image of this card."""
-        art_lines = self.get_art().split('\n')
-        name = self.get_name()
-        rarity = self.get_rarity()
-        desc = self.get_description().split('\n')
-        top_art_line = art_lines[0]
-        mid_art_lines = art_lines[1:-1]
-        bot_art_line = art_lines[-1]
-        # Header
-        render = '+' + '-'*38 + '+\n'
-        render += r'| {}{}{} |'.format(name,
-                                       ' '*(36-(len(name) + len(rarity))),
-                                       rarity) + '\n'
-        render += '|' + ' '*38 + ' \n'
-        # Art
-        render += '|  /' + '-'*32 + r'\  |' + '\n'
-        render += '| /' + top_art_line + r'\ |' + '\n'
-        for line in mid_art_lines:
-            render += '| |' + line + '| |\n'
-        render += '| \\' + bot_art_line + '/ |\n'
-        render += '|  \\' + '-'*32 + '/  |' + '\n'
-        # Description
-        desc_h_space = 38
-        description_lines = []
-        for line in desc:
-            line_split = [line[i:i+desc_h_space] for i in range(0, len(line), desc_h_space)]
-            description_lines += line_split
-        for line in description_lines:
-            if len(line) < desc_h_space:
-                render += '|' + line + ' '*(desc_h_space-len(line)) + '|\n'
-            else:
-                render += '|' + line + '|\n'
-        render += '|' + ' '*38 + ' \n'
-        # Footer
-        for param in self.get_all_params():
-            if param.is_visible():
-                val = param.get_val()
-                if type(val) in [int, float]:
-                    paramtext = param.get_name() + ': ' + val + '/' + param.get_max()
-                else:
-                    paramtext = val
-                render += '|' + ' '*(37-len(paramtext)) + paramtext + ' |'
-        render = '+' + '-'*38 + '+\n'
-        return '```' + render + '```'
+        return render(self.get_art(), self.get_name(), self.get_rarity(), self.get_description(), self.get_all_params())
 
 
 class ParamDefinition:
@@ -254,3 +213,96 @@ class MoneyButton(Card):
         params.append(ParamDefinition('money', base_val=0, base_visible=True, max_default=100))
         params.append(ParamDefinition('last_use', base_val=0, base_visible=False, max_default=None))
         return params
+
+
+    # def render(self) -> str:
+    #     """Returns a string representing the ascii image of this card."""
+    #     art_lines = self.get_art().split('\n')
+    #     name = self.get_name()
+    #     rarity = self.get_rarity()
+    #     desc = self.get_description().split('\n')
+    #     top_art_line = art_lines[0]
+    #     mid_art_lines = art_lines[1:-1]
+    #     bot_art_line = art_lines[-1]
+    #     # Header
+    #     render_str = '+' + '-' * 38 + '+\n'
+    #     render_str += r'| {}{}{} |'.format(name,
+    #                                        ' ' * (36 - (len(name) + len(rarity))),
+    #                                        rarity) + '\n'
+    #     render_str += '|' + ' ' * 38 + ' \n'
+    #     # Art
+    #     render_str += '|  /' + '-' * 32 + r'\  |' + '\n'
+    #     render_str += '| /' + top_art_line + r'\ |' + '\n'
+    #     for line in mid_art_lines:
+    #         render_str += '| |' + line + '| |\n'
+    #     render_str += '| \\' + bot_art_line + '/ |\n'
+    #     render_str += '|  \\' + '-' * 32 + '/  |' + '\n'
+    #     # Description
+    #     desc_h_space = 38
+    #     description_lines = []
+    #     for line in desc:
+    #         line_split = [line[i:i + desc_h_space] for i in range(0, len(line), desc_h_space)]
+    #         description_lines += line_split
+    #     for line in description_lines:
+    #         if len(line) < desc_h_space:
+    #             render_str += '|' + line + ' ' * (desc_h_space - len(line)) + '|\n'
+    #         else:
+    #             render_str += '|' + line + '|\n'
+    #     render_str += '|' + ' ' * 38 + ' \n'
+    #     # Footer
+    #     for param in self.get_all_params():
+    #         if param.is_visible():
+    #             val = param.get_val()
+    #             if type(val) in [int, float]:
+    #                 paramtext = param.get_name() + ': ' + val + '/' + param.get_max()
+    #             else:
+    #                 paramtext = val
+    #             render_str += '|' + ' ' * (37 - len(paramtext)) + paramtext + ' |'
+    #     render_str = '+' + '-' * 38 + '+\n'
+    #     return '```' + render_str + '```'
+
+
+def render(art: str, name: str, rarity: str, desc: str, params: list) -> str:
+    """Returns a string representing the ascii image of this card."""
+    art_lines = art.split('\n')
+    desc = desc.split('\n')
+    top_art_line = art_lines[0]
+    mid_art_lines = art_lines[1:-1]
+    bot_art_line = art_lines[-1]
+    # Header
+    render_str = '+' + '-' * 38 + '+\n'
+    render_str += r'| {}{}{} |'.format(name,
+                                       ' ' * (36 - (len(name) + len(rarity))),
+                                       rarity) + '\n'
+    render_str += '|' + ' ' * 38 + ' \n'
+    # Art
+    render_str += '|  /' + '-' * 32 + r'\  |' + '\n'
+    render_str += '| /' + top_art_line + r'\ |' + '\n'
+    for line in mid_art_lines:
+        render_str += '| |' + line + '| |\n'
+    render_str += '| \\' + bot_art_line + '/ |\n'
+    render_str += '|  \\' + '-' * 32 + '/  |' + '\n'
+    # Description
+    desc_h_space = 38
+    description_lines = []
+    for line in desc:
+        line_split = [line[i:i + desc_h_space] for i in range(0, len(line), desc_h_space)]
+        description_lines += line_split
+    for line in description_lines:
+        if len(line) < desc_h_space:
+            render_str += '|' + line + ' ' * (desc_h_space - len(line)) + '|\n'
+        else:
+            render_str += '|' + line + '|\n'
+    render_str += '|' + ' ' * 38 + ' \n'
+    # Footer
+    for param in params:
+        if param.is_visible():
+            val = param.get_val()
+            if type(val) in [int, float]:
+                paramtext = param.get_name() + ': ' + val + '/' + param.get_max()
+            else:
+                paramtext = val
+            render_str += '|' + ' ' * (37 - len(paramtext)) + paramtext + ' |'
+    render_str = '+' + '-' * 38 + '+\n'
+    return '```' + render_str + '```'
+
