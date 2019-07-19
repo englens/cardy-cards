@@ -75,22 +75,21 @@ class Card:
         return self.id == other.id and type(self) == type(other)
 
     # --- INTERFACE --- #
-    def passive(self, message, t):
-        """Called every time the card is used or displayed. Returns a string along
-           the lines of 'Made 5 money since last checked'"""
-        return ''
+    async def passive(self, message, t):
+        """Called every time the card is used or displayed. Use message to let user know what happened.
+           Should say something like 'Made 5 money since last checked'"""
+        pass
 
     # Called when
-    def use(self, message):
-        """Does something when activated with !use."""
-        return ''
+    async def use(self, message):
+        """Does something when activated with !use. Use message to let user know what happened."""
+        pass
 
     @staticmethod
     def get_param_types() -> list:
         """returns list of ParamDefinitions for each param.
            Subclasses should invoke and add to super."""
         return []
-
     # ------------------ #
 
     def validate(self) -> bool:
@@ -100,6 +99,14 @@ class Card:
 
     def get_name(self) -> str:
         sqlstr = '''SELECT name 
+                    FROM CardType
+                        JOIN Card ON Card.card_type_id=CardType.id
+                    WHERE Card.id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()[0]
+
+    def get_class_name(self) -> str:
+        sqlstr = '''SELECT class_name
                     FROM CardType
                         JOIN Card ON Card.card_type_id=CardType.id
                     WHERE Card.id=:id;'''
@@ -178,7 +185,8 @@ class Card:
         self.conn.commit()
 
     def render(self) -> str:
-        return render_card(self.get_art(), self.get_name(), self.get_rarity(), self.get_description(), self.get_all_params())
+        return render_card(self.get_art(), self.get_name(), self.get_rarity(),
+                           self.get_description(), self.get_all_params())
 
 
 class ParamDefinition:
@@ -195,11 +203,11 @@ class MoneyButton(Card):
     DELAY_BETWEEN_USES = 60*60  # 1 hour
     MONEY_ON_USE = 5
 
-    def use(self, message) -> str:
+    async def use(self, message):
         time_since_last = time.time() - self.get_param('last_use').get_val()
         if time_since_last < MoneyButton.DELAY_BETWEEN_USES:
             # Too soon
-            return f'Please Wait {time_since_last - MoneyButton.DELAY_BETWEEN_USES} seconds before use.'
+            await message.channel.send(f'Please Wait {time_since_last - MoneyButton.DELAY_BETWEEN_USES} seconds before use.')
         money = self.get_param('money')
         if money.get_val() + MoneyButton.MONEY_ON_USE > money.get_max():
             money.set_val(money.get_max())
@@ -260,13 +268,15 @@ class MoneyButton(Card):
     #     return '```' + render_str + '```'
 
 
-def get_card_class(card):
+def get_card(sql_connection, sql_id: int) -> Card:
+    """Creates a new card, and converts it to the correct behavior sub-class."""
+    return get_card_class_from_generic(Card(sql_connection, sql_id))
+
+
+def get_card_class_from_generic(card) -> Card:
+    """Converts a Card object into its specific behavior sub-class, using the CardType's class_name."""
     class_str = card.get_class_name()
-    return str_to_class(class_str)(card.conn, card.id)
-
-
-def str_to_class(classname):
-    return getattr(sys.modules[__name__], classname)
+    return getattr(sys.modules[__name__], class_str)(card.conn, card.id)
 
 
 def render_card(art: str, name: str, rarity: str, desc: str, params: list) -> str:

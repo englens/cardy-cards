@@ -1,4 +1,6 @@
 import card
+import math
+SHOP_WINDOW_WIDTH = 40
 
 
 class Shop:
@@ -7,43 +9,43 @@ class Shop:
         self.conn = sql_connection
         self.cursor = self.conn.cursor()
 
-    def get_name(self):
+    def get_name(self) -> str:
         sqlstr = """SELECT name FROM Shop
                     WHERE id=:id;"""
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_greeting_quip(self):
+    def get_greeting_quip(self) -> str:
         sqlstr = """SELECT greeting_quip FROM Shop
                     WHERE id=:id;"""
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_exit_quip(self):
+    def get_exit_quip(self) -> str:
         sqlstr = """SELECT exit_quip FROM Shop
                     WHERE id=:id;"""
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_examine_quip(self):
+    def get_examine_quip(self) -> str:
         sqlstr = """SELECT examine_quip FROM Shop
                     WHERE id=:id;"""
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_cancel_quip(self):
+    def get_cancel_quip(self) -> str:
         sqlstr = """SELECT cancel_quip FROM Shop
                     WHERE id=:id;"""
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_buy_quip(self):
+    def get_buy_quip(self) -> str:
         sqlstr = """SELECT buy_quip FROM Shop
                     WHERE id=:id;"""
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_card_listings(self):
+    def get_card_listings(self) -> list:
         sqlstr = '''SELECT CardListing.id FROM CardListing
                     WHERE CardListing.shop_id=:id
                     ORDER BY CardListing.shop_index ASC;'''
@@ -60,6 +62,16 @@ class Shop:
         except TypeError:  # Indexing NoneType -- aka card not found
             raise IndexError('Card Not found at index ' + str(index))
 
+    def render(self) -> str:
+        title = 'Shop: ' + self.get_name()
+        left_dashes = '-'*math.floor(SHOP_WINDOW_WIDTH-len(title)/2)
+        right_dashes = '-'*math.ceil(SHOP_WINDOW_WIDTH-len(title)/2)
+        render_str = left_dashes + title + right_dashes + '\n'
+        for card_listing in self.get_card_listings():
+            render_str += card_listing.get_shop_listing_text() + '\n'
+        render_str += '-'*SHOP_WINDOW_WIDTH
+        return render_str
+
 
 class CardListing:
     """Card to be displayed in a shop. Represents the card type, and returns default values."""
@@ -68,25 +80,25 @@ class CardListing:
         self.conn = sql_connection
         self.cursor = self.conn.cursor()
 
-    def get_shop_index(self):
+    def get_shop_index(self) -> int:
         sqlstr = '''SELECT shop_index FROM CardListing
                             WHERE CardListing.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_price_type(self):
+    def get_price_type(self) -> str:
         sqlstr = '''SELECT price_type FROM CardListing
                     WHERE CardListing.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_price_value(self):
+    def get_price_value(self) -> int:
         sqlstr = '''SELECT price FROM CardListing
                     WHERE CardListing.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
-    def get_stock(self):
+    def get_stock(self) -> int:
         sqlstr = '''SELECT stock FROM CardListing
                     WHERE CardListing.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
@@ -99,7 +111,7 @@ class CardListing:
         self.cursor.execute(sqlstr, {'new_val': new_val, 'id': self.id})
         self.conn.commit()
 
-    def get_fake_params(self):
+    def get_fake_params(self) -> list:
         sqlstr = '''SELECT ParamType.id FROM ParamType
                         JOIN CardType ON ParamType.card_type=CardType.id
                         JOIN CardListing ON CardListing.card_type=CardType.id
@@ -142,6 +154,14 @@ class CardListing:
     def render(self):
         return card.render_card(self.get_art(), self.get_name(),
                                 self.get_rarity(), self.get_description(), self.get_fake_params())
+
+    def get_shop_listing_text(self) -> str:
+        """Returns the row of the shop representing this card. Example:
+           1) MoneyButton                  100 money"""
+        render_str_left = str(self.get_shop_index()) + ') ' + self.get_name()
+        render_str_right = str(self.get_price_value()) + ' ' + str(self.get_price_value())
+        spaces = ' '*(SHOP_WINDOW_WIDTH - (len(render_str_left) + len(render_str_right)))
+        return render_str_left + spaces + render_str_right
 
 
 class FakeParam:

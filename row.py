@@ -1,6 +1,7 @@
-from card import Card
+from card import Card, get_card_class_from_generic
 ROW_WINDOW_WIDTH = 40
 DEFAULT_MAX_CARDS = 8
+
 
 class Row:
     """Area in player inventory in which cards can interact."""
@@ -52,12 +53,13 @@ class Row:
         return DEFAULT_MAX_CARDS
 
     def get_card(self, index: int) -> Card:
-        sqlstr = '''SELECT id FROM Card
+        sqlstr = '''SELECT Card.id, CardType.class_name FROM Card
+                        JOIN CardType on Card.card_type=CardType.id
                     WHERE Card.row_index=:r_index
                     AND Card.row_id=:rid;'''
         self.cursor.execute(sqlstr, {'r_index': index, 'rid': self.id})
         card_id = self.cursor.fetchone()[0]
-        return Card(self.conn, card_id)
+        return get_card_class_from_generic(Card(self.conn, card_id))
 
     def get_all_cards(self) -> list:
         """Return all cards in ascending order"""
@@ -65,7 +67,7 @@ class Row:
                     WHERE Card.row_id=:rid
                     ORDER BY Card.row_index ASC;'''
         self.cursor.execute(sqlstr, {'rid': self.id})
-        return [Card(self.conn, i[0]) for i in self.cursor.fetchall()]
+        return [get_card_class_from_generic(Card(self.conn, i[0])) for i in self.cursor.fetchall()]
 
     # Add card to row. Throws RowFullError if row full.
     # Also sets up parameters and defaults.
@@ -101,7 +103,7 @@ class Row:
         """Remove a card from the row, deleting it from the database."""
         self.get_card(index).delete()
 
-    def render(self):
+    def render(self) -> str:
         alias = self.get_alias()
         if alias is None:
             alias = str(self.get_index())

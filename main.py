@@ -201,7 +201,7 @@ async def tutorial(message, session_player: player.Player):
         await channel.send(f'Aborting Tutorial for {session_player.get_name()}. Restart it at any time with !tutorial.')
 
 
-# For when we've already joined
+# For when the player has already joined
 async def join_command(message: discord.Message, session_player: player.Player):
     await message.channel.send('You\ve already joined! Say !help if you don\'t know what to do.')
 
