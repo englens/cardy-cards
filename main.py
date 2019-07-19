@@ -172,13 +172,13 @@ async def tutorial(message, session_player: player.Player):
         await channel.send('Each card either does these things passively, when activated with !use, or both.')
         await asyncio.sleep(DEFAULT_MESSAGE_DELAY)
         await pinput.ask_loop('To "use" a card, Type !use. Try it now.', ['!use'], 'Type !use to use this card.')
-        await channel.send(session_card.use())
+        await session_card.use(message)
         await channel.send(session_card.render())
         await channel.send('Look. Now you have 1 money.')
         await asyncio.sleep(DEFAULT_MESSAGE_DELAY)
         await pinput.ask_loop('Next, check out the shop menu. Type !shop.',
-                       ['!shop'],
-                       'Please pull up the shop menu with !shop.')
+                              ['!shop'],
+                              'Please pull up the shop menu with !shop.')
         # TODO: Show shop menu
         await pinput.ask_loop('Here you will see all the shops you can buy cards from. '
                               'For now, you only have one unlocked. Select it with !select 1.',

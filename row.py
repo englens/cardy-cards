@@ -39,7 +39,7 @@ class Row:
         return self.cursor.fetchone()[0]
 
     def get_index(self) -> int:
-        sqlstr = '''SELECT inventory_index FROM Row
+        sqlstr = '''SELECT player_index FROM Row
                     WHERE id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
@@ -103,6 +103,8 @@ class Row:
 
     def render(self):
         alias = self.get_alias()
+        if alias is None:
+            alias = str(self.get_index())
         no_dashes = ROW_WINDOW_WIDTH - len(alias) - 8
 
         render = '-'*(no_dashes//2) + 'Row ' + str(self.get_index()) + '-'*(no_dashes//2) + '\n'

@@ -1,5 +1,6 @@
 from collections import namedtuple
 import time
+import sys
 ParamType = namedtuple('ParamType', ['name', 'val_default', 'max_default', 'visible_default', 'card_type'])
 
 
@@ -126,7 +127,7 @@ class Card:
         sqlstr = '''SELECT description
                     FROM CardType
                         JOIN Card on Card.card_type_id=CardType.id
-                    WHERE Card.id=:id
+                    WHERE Card.id=:id;
                  '''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
@@ -259,6 +260,15 @@ class MoneyButton(Card):
     #     return '```' + render_str + '```'
 
 
+def get_card_class(card):
+    class_str = card.get_class_name()
+    return str_to_class(class_str)(card.conn, card.id)
+
+
+def str_to_class(classname):
+    return getattr(sys.modules[__name__], classname)
+
+
 def render_card(art: str, name: str, rarity: str, desc: str, params: list) -> str:
     """Returns a string representing the ascii image of this card."""
     art_lines = art.split('\n')
@@ -302,4 +312,3 @@ def render_card(art: str, name: str, rarity: str, desc: str, params: list) -> st
             render_str += '|' + ' ' * (37 - len(paramtext)) + paramtext + ' |'
     render_str = '+' + '-' * 38 + '+\n'
     return '```' + render_str + '```'
-
