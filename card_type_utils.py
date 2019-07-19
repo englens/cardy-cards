@@ -1,4 +1,4 @@
-
+import card
 def make_card_type(conn, name, rarity, description, art, class_name):
     sqlstr = """INSERT INTO CardType (name, rarity, description, art, class_name)
                 VALUES (:name, :rarity, :description, :art, :class_name);"""
@@ -21,13 +21,10 @@ def card_art_extractor(full_art):
     return art
 
 
+def register_new_card_type(type_class):
+    params: list = type_class.get_param_types()
+    for param in params:
 
 
-
-
-
-
-
-
-
-
+def register_new_param_type(param_def: card.ParamDefinition):
+    sqlstr = """INSERT INTO ParamType (name, value_default, max_default, visible_default, card_type)"""

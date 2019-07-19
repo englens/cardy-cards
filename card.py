@@ -1,5 +1,5 @@
 from collections import namedtuple
-
+import time
 ParamType = namedtuple('ParamType', ['name', 'val_default', 'max_default', 'visible_default', 'card_type'])
 
 
@@ -73,15 +73,21 @@ class Card:
         return self.id == other.id and type(self) == type(other)
 
     ## INTERFACE ##
-    def passive(self, t):
-        pass
 
-    def use(self):
-        pass
+
+    def passive(self, message, t):
+        """Called every time the card is used or displayed. Returns a string along
+           the lines of 'Made 5 money since last checked'"""
+        return ''
+
+    # Called when
+    def use(self, message):
+        """Does something when activated with !use."""
+        return ''
 
     @staticmethod
     def get_param_types() -> list:
-        """returns list of param type namedtuples.
+        """returns list of ParamDefinitions for each param.
            Subclasses should invoke and add to super."""
         return []
     ################
@@ -216,21 +222,35 @@ class Card:
         render = '+' + '-'*38 + '+\n'
         return '```' + render + '```'
 
-"""
-class ExampleBasicCard(Card):
-    """"""Simple card that gives you 1 money when you press it.
-        Params:
-            Money: Increases by 1 each use. Max 100""""""
-    def use(self):
-        pass
 
-    def passive(self, t):
-        pass
+class ParamDefinition:
+    """Defines a Param (ParamType) for use in Card.get_param_types()."""
+    def __init__(self, name: str, base_val, base_visible: bool, max_default=None):
+        self.name = name
+        self.base_val = base_val
+        self.base_visible = base_visible
+        self.max_default = max_default
+
+
+class MoneyButton(Card):
+    """Gives the player 5 money every 1 hour."""
+    DELAY_BETWEEN_USES = 60*60  # 1 hour
+    MONEY_ON_USE = 5
+
+    def use(self, message) -> str:
+        time_since_last = time.time() - self.get_param('last_use').get_val()
+        if time_since_last < MoneyButton.DELAY_BETWEEN_USES:
+            # Too soon
+            return f'Please Wait {time_since_last - MoneyButton.DELAY_BETWEEN_USES} seconds before use.'
+        money = self.get_param('money')
+        if money.get_val() + MoneyButton.MONEY_ON_USE > money.get_max():
+            money.set_val(money.get_max())
+        else:
+            money.set_val(money.get_val() + MoneyButton.MONEY_ON_USE)
 
     @staticmethod
     def get_param_types() -> list:
-        ptypes = super().get_param_types()
-        ptypes.append(ParamType('Money', 0, 100, True, #TODO get card type id))
-        return ptypes
-"""
-
+        params = super().get_param_types()
+        params.append(ParamDefinition('money', base_val=0, base_visible=True, max_default=100))
+        params.append(ParamDefinition('last_use', base_val=0, base_visible=False, max_default=None))
+        return params
