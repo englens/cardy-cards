@@ -24,7 +24,7 @@ def card_art_extractor(full_art):
 def register_new_card_type(type_class):
     params: list = type_class.get_param_types()
     for param in params:
-
+        pass  # TODO
 
 def register_new_param_type(param_def: card.ParamDefinition):
     sqlstr = """INSERT INTO ParamType (name, value_default, max_default, visible_default, card_type)"""

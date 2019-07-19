@@ -73,9 +73,7 @@ class Card:
     def __eq__(self, other):
         return self.id == other.id and type(self) == type(other)
 
-    ## INTERFACE ##
-
-
+    # --- INTERFACE --- #
     def passive(self, message, t):
         """Called every time the card is used or displayed. Returns a string along
            the lines of 'Made 5 money since last checked'"""
@@ -92,7 +90,7 @@ class Card:
            Subclasses should invoke and add to super."""
         return []
 
-    ################
+    # ------------------ #
 
     def validate(self) -> bool:
         sqlstr = '''SELECT EXISTS(SELECT 1 FROM Card WHERE id = :id);'''
@@ -179,7 +177,7 @@ class Card:
         self.conn.commit()
 
     def render(self) -> str:
-        return render(self.get_art(), self.get_name(), self.get_rarity(), self.get_description(), self.get_all_params())
+        return render_card(self.get_art(), self.get_name(), self.get_rarity(), self.get_description(), self.get_all_params())
 
 
 class ParamDefinition:
@@ -213,7 +211,6 @@ class MoneyButton(Card):
         params.append(ParamDefinition('money', base_val=0, base_visible=True, max_default=100))
         params.append(ParamDefinition('last_use', base_val=0, base_visible=False, max_default=None))
         return params
-
 
     # def render(self) -> str:
     #     """Returns a string representing the ascii image of this card."""
@@ -262,7 +259,7 @@ class MoneyButton(Card):
     #     return '```' + render_str + '```'
 
 
-def render(art: str, name: str, rarity: str, desc: str, params: list) -> str:
+def render_card(art: str, name: str, rarity: str, desc: str, params: list) -> str:
     """Returns a string representing the ascii image of this card."""
     art_lines = art.split('\n')
     desc = desc.split('\n')

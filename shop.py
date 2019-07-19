@@ -42,6 +42,8 @@ class Shop:
         return self.cursor.fetchone()[0]
 
     def get_card_listings(self):
+        pass  # TODO
+
 
 class CardListing:
     def __init__(self, sql_connection, sql_id: int):
