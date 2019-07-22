@@ -7,7 +7,7 @@ async def ask_loop(client: discord.Client, message: discord.Message, question: s
                    timeout: int = 60, case_sensitive=False):
     """
     Asks for a response. Will keep asking until a correct response is given, the message times out,
-    or the user runs out of tries.
+    or the user runs out of tries. returns response.
     Parameters:
         client: Discord client (from main)
         message: Discord Message from the player in the correct channel.
@@ -32,7 +32,7 @@ async def ask_loop(client: discord.Client, message: discord.Message, question: s
                 return msg.content
         else:
             if msg.content.lower() in responses:
-                return msg.content
+                return msg.content.lower()
         tries -= 1
         if tries == 0:
             raise asyncio.TimeoutError('Out of tries')

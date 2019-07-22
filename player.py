@@ -1,4 +1,4 @@
-from row import Row
+from row import Row, RowFilledError
 
 DEFAULT_NO_ROWS = 1
 PLAYER_WINDOW_WIDTH = 40
@@ -36,6 +36,19 @@ class Player:
         self.cursor.execute(sqlstr, {'sql_id': self.id})
         return self.cursor.fetchone()[0]
 
+    def add_card(self, type_name) -> bool:
+        """Adds card to the first available row, and returns True if successful."""
+        row_index = 0
+        max_index = self.get_next_row_index() - 1
+        while True:
+            try:
+                self.get_row(0).add_card(type_name)
+                return True
+            except RowFilledError:
+                if row_index == max_index:
+                    raise RowFilledError('Players inventory filled.')
+                row_index += 1
+
     def get_discord_id(self) -> int:
         """Returns the unique discord id."""
         sqlstr = '''SELECT discord_id FROM Player
@@ -62,12 +75,13 @@ class Player:
         sqlstr = '''SELECT Row.id, Row.player_index
                     FROM Row
                         JOIN Player ON Player.id = Row.player_id
-                    WHERE Player.id=:sql_id;
+                    WHERE Player.id=:sql_id
+                    ORDER BY Row.player_index;
                  '''
         self.cursor.execute(sqlstr, {'sql_id': self.id})
         results = self.cursor.fetchall()
-        ordered_rows = [Row(self.conn, a[0]) for a in sorted(results, key=lambda tup: tup[1])]
-        return ordered_rows
+        rows = [Row(self.conn, a[0]) for a in results]
+        return rows
 
     def get_row(self, index: int) -> Row:
         sqlstr = '''SELECT id FROM Row

@@ -4,6 +4,7 @@ import sqlite3
 import traceback
 import player
 import bot_utils
+import shop
 import player_state as p_state
 
 # CONSTANTS
@@ -118,6 +119,43 @@ async def help_command(message: discord.Message, session_player: player.Player):
     # TODO: Show general help menu, and state specific help if applicable
 
 
+async def shop_card_examine_menu(message: discord.Message, session_player: player.Player,
+                                 session_shop: shop.Shop, shop_index: int):
+    session_card = session_shop.get_card_listing(shop_index)
+    shop_length = session_shop.get_length()
+    pinput = bot_utils.PInput(client, message)
+    done = False
+    menu_str = str('Actions:\n' +
+                   '!buy -- buy this card, adding it to your first open row.\n' +
+                   '!back -- return to shop menu.\n' +
+                   '!next -- show next card for sale\n' +
+                   '!prev -- show prev card for sale')
+    # Main menu loop
+    while not done:
+        await message.channel.send(session_card.render())
+        try:
+            response = await pinput.ask_loop('```'+menu_str+'```', ['!buy', '!back', '!next', '!prev'],
+                                             'Invalid Response.', 3, 60, False)
+        except asyncio.TimeoutError:
+            p_state.set_player_state(session_player.id, p_state.DefaultState())
+            return
+        if response == '!buy':
+            stock = session_card.get_stock()
+            if stock != 0:
+                session_player.add_card(session_card)
+                if stock > 0:  # if -1, stock infinite
+                    session_card.set_stock(stock-1)
+        if response == '!back':
+            p_state.set_player_state(session_player.get_discord_id(), p_state.ShopState(session_shop.id))
+            done = True
+        if response == '!next':
+            if shop_index <= shop_length:
+                shop_index += 1
+        if response == '!prev':
+            if shop_index != 0:
+                shop_index -= 1
+
+
 # We assume the player is not in session here.
 async def player_creation(message):
     channel = message.channel
@@ -203,7 +241,7 @@ async def tutorial(message, session_player: player.Player):
 
 # For when the player has already joined
 async def join_command(message: discord.Message, session_player: player.Player):
-    await message.channel.send('You\ve already joined! Say !help if you don\'t know what to do.')
+    await message.channel.send('You\'ve already joined! Say !help if you don\'t know what to do.')
 
 
 if __name__ == '__main__':

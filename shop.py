@@ -9,6 +9,13 @@ class Shop:
         self.conn = sql_connection
         self.cursor = self.conn.cursor()
 
+    def get_length(self) -> int:
+        sqlstr = """SELECT COUNT(*) FROM CardListing
+                        JOIN Shop ON CardListing.shop_id=Shop.id
+                    WHERE Shop.id=:id;"""
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()[0]
+
     def get_name(self) -> str:
         sqlstr = """SELECT name FROM Shop
                     WHERE id=:id;"""
@@ -165,7 +172,8 @@ class CardListing:
 
 
 class FakeParam:
-    """Represents a Param of a card type, for displaying in shops."""
+    """Represents a Param of a card type, for displaying in shops.
+       Not Stored in SQL -- gets info from Types."""
     def __init__(self, param_type_id: int, conn):
         self.id = param_type_id
         self.conn = conn
