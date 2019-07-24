@@ -208,9 +208,20 @@ class FakeParam:
 
     # almost always same as default, but functionality is there to change it
     def get_max(self):
-        """For non-number params, max is null"""
+        """For non-number params, max is null."""
         sqlstr = '''SELECT max_default
                     FROM ParamType
                     WHERE ParamType.id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
+
+
+def get_player_shops(plr, conn):
+    """Returns list of shops a player can access."""
+    cursor = conn.cursor()
+    sqlstr = """SELECT Shop.id FROM Shop
+                    JOIN ShopUnlocked ON ShopUnlocked.shop_id=Shop.id
+                WHERE ShopUnlocked.player_id=:id
+                ORDER BY Shop.name ASC;"""
+    cursor.execute(sqlstr, {'id': plr.id})
+    return [Shop(i[0], conn) for i in cursor.fetchall()]

@@ -92,10 +92,15 @@ async def card_command(message: discord.Message, session_player: player.Player, 
 
 
 async def shop_command(message: discord.Message, session_player: player.Player, shop_index):
+    """!shop <n>. Brings to shop with index N (calculated !TODO)
+       Rejects player if shop not unlocked"""
     pass  # TODO: show shop (need to implement first)
 
 
 async def shop_menu_command(message: discord.Message, session_player: player.Player):
+    msg =  '------Please Select a Shop (!select <N>)------'
+    for shp in shop.get_player_shops(session_player, conn):
+        msg +=  # TODO: Shop menu rendering
     pass  # TODO: show shop menu(need to implement first)
 
 
@@ -108,7 +113,7 @@ async def select_command(message: discord.Message, session_player: player.Player
     elif isinstance(state, p_state.ShopMenuState):  # Looking at all shops
         pass  # TODO
     elif isinstance(state, p_state.ShopState):  # Browsing 1 shop
-        pass  # TODO
+        await shop_command(message, session_player, param1)
     else:
         msg = 'Nothing to select!'
         await message.channel.send(msg)
