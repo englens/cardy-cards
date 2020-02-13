@@ -1,8 +1,8 @@
 import discord
-import shop
+from game_objects import shop
 import sqlite3
-import debug_utils
-from player import Player
+from utils import debug_utils
+from game_objects.player import Player
 """
 Module Description:
     Debug bot commands used for testing. Only used by admin users.
@@ -12,7 +12,7 @@ Module Description:
 async def unlock_shop(message: discord.Message, session_player: Player, terms: list, conn: sqlite3.Connection):
     # Rest of command is shop name
     try:
-        session_shop = shop.get_shop_by_name(' '.join(terms[1:]), conn.cursor())
+        session_shop = shop.get_shop_by_name(' '.join(terms[1:]), conn)
     except sqlite3.DatabaseError:
         await message.channel.send('Shop not found.')
         return

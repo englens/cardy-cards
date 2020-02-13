@@ -1,4 +1,4 @@
-from card import render_card
+from game_objects.card import render_card
 
 """
 Module Description:
@@ -14,7 +14,7 @@ class ShopListing:
         self.conn = sql_connection
         self.cursor = self.conn.cursor()
 
-    def get_card_name(self) -> str:
+    def get_card_type_name(self) -> str:
         sqlstr = '''SELECT CardType.name FROM CardType
                     JOIN ShopListing ON ShopListing.card_type_id=CardType.id
                     WHERE ShopListing.id=:id;'''

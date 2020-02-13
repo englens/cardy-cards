@@ -1,6 +1,7 @@
 from collections import namedtuple
+from typing import List
 import time
-import importlib
+
 ParamType = namedtuple('ParamType', ['name', 'val_default', 'max_default', 'visible_default', 'card_type'])
 
 
@@ -160,13 +161,31 @@ class Card:
         self.cursor.execute(sqlstr, {'name': param_name, 'id': self.id})
         return Param(self.cursor.fetchone()[0], self.conn)
 
-    def get_all_params(self) -> list:
+    def get_param_value(self, param_name, t=None):
+        return self.get_param(param_name, t).get_val()
+
+    def get_card_type_id(self):
+        sqlstr = '''SELECT card_type_id
+                    FROM Card
+                    WHERE id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()[0]
+
+    def get_all_params(self) -> List[Param]:
         sqlstr = '''SELECT Param.id
                     FROM Param
                     WHERE Param.card_id = :id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
         params = [Param(a[0], self.conn) for a in self.cursor.fetchall()]
         return params
+
+    def has_param(self, param_name: str) -> bool:
+        """Returns true if card has given param, the param is visible, and the param is > 0"""
+        params = self.get_all_params()
+        for p in params:
+            if p.is_visible() and p.get_name() == param_name and p.get_val() > 0:
+                return True
+        return False
 
     # Can be also done from the param class, but this is faster if we don't need any info about it
     def set_param(self, name, new_value):
@@ -187,19 +206,6 @@ class Card:
         return render_card(self.get_art(), self.get_name(), self.get_rarity(), self.get_description(), self.get_all_params())
 
 
-def card_id_to_specific(sql_conn, card_id: int):
-    """Returns a card class with the correct subclass, given the ClassName column"""
-    curr = sql_conn.cursor()
-    sqlstr = """SELECT class_name FROM CardType
-                    JOIN Card ON Card.card_type_id=CardType.id
-                WHERE Card.id=:id;"""
-    curr.execute(sqlstr, {'id': card_id})
-    class_name = curr.fetchone()[0]
-
-    CardClass = getattr(importlib.import_module("Cards."+class_name), class_name)
-    return CardClass(sql_conn, card_id)
-
-
 def render_card(art: str, name: str, rarity: str, desc: str, params: list) -> str:
     """Returns a string representing the ascii image of this card."""
     # TODO: Card art saving with extra character on all but last line. Need to fix in CCD
@@ -214,8 +220,8 @@ def render_card(art: str, name: str, rarity: str, desc: str, params: list) -> st
     # Header
     render_lines.append('+' + '-'*(pic_width-2) + '+')
     render_lines.append(r'| {}{}{} |'.format(name,
-                                       ' '*(pic_width-4 - len(name) - len(rarity)),
-                                       rarity))
+                                             ' '*(pic_width-4 - len(name) - len(rarity)),
+                                             rarity))
     # Empty between header and art
     render_lines.append('|' + ' '*(pic_width-2) + '|')
     # Art

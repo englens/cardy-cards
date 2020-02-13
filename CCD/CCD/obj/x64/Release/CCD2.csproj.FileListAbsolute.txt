@@ -1,0 +1,12 @@
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\x64\Release\CCD2.exe.config
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\x64\Release\CCD2.exe
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\x64\Release\CCD2.pdb
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\x64\Release\System.Data.SQLite.dll
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\x64\Release\System.Data.SQLite.xml
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\x64\Release\System.Data.SQLite.dll.config
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\x64\Release\CCD2.Properties.Resources.resources
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\x64\Release\CCD2.csproj.GenerateResource.cache
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\x64\Release\CCD2.csproj.CoreCompileInputs.cache
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\x64\Release\CCD2.csproj.CopyComplete
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\x64\Release\CCD2.exe
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\x64\Release\CCD2.pdb

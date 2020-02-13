@@ -1,11 +1,13 @@
 import sqlite3
 import discord
-import bot_utils
-import player
+import asyncio
+
+from . import debug_commands
+from game_objects import player
+from .tutorial import tutorial
+from utils import debug_utils, bot_utils
+
 import player_state as p_state
-import debug_utils
-import debug_commands
-from tutorial import tutorial
 
 """
 Module Description:
@@ -91,6 +93,39 @@ async def shop_card_command(message: discord.Message, session_player: player.Pla
     await message.channel.send(session_card.get_card_render())
 
 
+async def buy_command(message: discord.Message, session_player: player.Player, card_index: int = None):
+    state = p_state.get_player_state(session_player.id)
+    # Verify valid state and syntax, fetch session card
+    if isinstance(state, p_state.ShopCardState):
+        if card_index is not None:
+            await message.channel.send('Improper format: buy index not needed when examining a Card listing.')
+            return
+        session_card = state.card
+    elif isinstance(state, p_state.ShopState):
+        if card_index is None:
+            await message.channel.send('Improper format: Please supply an index or !examine a Card listing first.')
+            return
+        session_card = state.shop.get_listing_from_index(card_index)
+    else:
+        # state has no valid buy command
+        await message.channel.send('Nothing to buy from this game state.')
+        return
+    # ---------------
+    # Attempt to pay
+    # TODO: change this to a check, and actually try to pay after selecting a row
+    # OR: Implement Card Vault
+    response = session_player.try_pay(session_card.get_price_name(), session_card.get_price())
+    if response is None:
+        await message.channel.send(f'Not enough {session_card.get_price_name()} to pay cost.')
+        return
+
+    await message.channel.send(f'Bought [{session_card.get_card_type_name()}]!')
+    await asyncio.sleep(1)
+    msg = 'Please !select a row to insert new Card into, or !cancel to place it in the Vault:\n' + session_player.render()
+    await message.channel.send(msg)
+    p_state.set_player_state(session_player.id, p_state.ShopCardSelectRowState(state.shop, session_card))
+
+
 async def use_command(message: discord.Message, session_player: player.Player):
     state = p_state.get_player_state(session_player.id)
     if not isinstance(state, p_state.CardState):
@@ -98,13 +133,13 @@ async def use_command(message: discord.Message, session_player: player.Player):
     else:
         await state.session_card.use(message)
     # TODO: Edit the OG card message if the card changed. This way we dont have to reshow the new card
+    # OR have card produce "summary" messages
 
 
 async def select_command(message: discord.Message, session_player: player.Player, param1: int, param2: int = None):
     """General command to 'select' something from a list by index.
        Can optionally take two parameters (ex, !inventory 2 1, for row 2 card 1)
        INDEXES START WITH 1!"""
-
     state = p_state.get_player_state(session_player.id)
     if isinstance(state, p_state.RowState):  # Browsing 1 row
         await card_command(message, session_player, state.session_row.get_index(), param1)
@@ -114,8 +149,31 @@ async def select_command(message: discord.Message, session_player: player.Player
         await shop_command(message, session_player, param1)
     elif isinstance(state, p_state.ShopState):  # Browsing 1 shop
         await shop_card_command(message, session_player, param1)
+    elif isinstance(state, p_state.ShopCardSelectRowState):
+        await shop_card_select_row(message, session_player, param1)
     else:
         await message.channel.send('Nothing to select')
+
+
+async def shop_card_select_row(message: discord.Message, session_player: player.Player, row_index: int):
+    state = p_state.get_player_state(session_player.id)
+    assert isinstance(state, p_state.ShopCardSelectRowState)
+    try:
+        session_row = session_player.get_row(row_index)
+    except Exception:
+        await message.channel.send('Invalid Row Index.')
+        return
+    if session_row.remaining_slots() <= 0:
+        await message.channel.send('Selected Row full; please select another Row or make room.')
+    # ----------
+    card_name = state.card.get_card_type_name()
+    session_row.add_card(card_name)
+    await message.channel.send(f'[{card_name}] added to Row {session_row.get_index()}')
+    await asyncio.sleep(2)
+    await message.channel.send('Returning to shop...')
+    await asyncio.sleep(1)
+    await message.channel.send(state.shop.render())
+    p_state.set_player_state(session_player.id, p_state.ShopState(state.shop))
 
 
 async def help_command(message: discord.Message, session_player: player.Player):
@@ -142,8 +200,3 @@ async def player_creation(message, players_in_session, client: discord.Client, c
     else:
         await channel.send('Alright. You have been given one card to start off. Type !help to see commands. Good Luck!')
     players_in_session.remove(new_player)
-
-
-async def join_command(message: discord.Message, session_player: player.Player):
-    """Notify the player when they've already joined"""
-    await message.channel.send('You\ve already joined! Say !help if you don\'t know what to do.')

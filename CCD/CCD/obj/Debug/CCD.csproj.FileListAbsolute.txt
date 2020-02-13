@@ -1,0 +1,16 @@
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\Debug\CCD.exe
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\Debug\CCD.pdb
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\Debug\System.Data.SQLite.dll
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\Debug\System.Data.SQLite.xml
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\Debug\System.Data.SQLite.dll.config
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\Debug\CCD.CCD.resources
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\Debug\CCD.Properties.Resources.resources
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\Debug\CCD.csproj.GenerateResource.cache
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\Debug\CCD.csproj.CoreCompileInputs.cache
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\Debug\CCD.csproj.CopyComplete
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\Debug\CCD.exe
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\Debug\CCD.pdb
+D:\Programming\bots\cardy-cards\CCD2\CCD2\obj\Debug\CCD.csprojAssemblyReference.cache
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\Debug\CCD.exe.config
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\Debug\Newtonsoft.Json.dll
+D:\Programming\bots\cardy-cards\CCD2\CCD2\bin\Debug\Newtonsoft.Json.xml

@@ -1,79 +1,87 @@
 from enum import Enum
+from game_objects.shop import Shop
+from game_objects.row import Row
+from game_objects.card import Card
+from game_objects.shop_listings import ShopListing
 import time
 
+"""
+Module Description:
+    Provides easy interface for remembering the current "state" they player is in.
+    This module may be interfaced with using get_player_state and set_player_state.
+"""
+
 STATE_TIMEOUT = 120
-player_states = {}  # did:state
+player_states = {}  # did:{state, time}
 
-
-class State(Enum):
-    # Comments show state_param def
-    DEFAULT = 1  # []
-    INVENTORY = 2  # []
-    ROW = 3  # [row_index]
-    CARD = 4  # [row_index, card_index]
-    SHOP_MENU = 5  # []
-    SHOP = 6  # [shop_id]
-    SHOP_CARD_EXAMINE = 7  # [shop_id, index]
-
-
-# Base
 
 class BaseState:
-    def __init__(self, state):
-        self.state = state
+    """Used for inheritance purposes (for type hints)"""
+    pass
 
 
 class DefaultState(BaseState):
-    def __init__(self):
-        super().__init__(state=State.DEFAULT)
+    """State when player is in no special screen."""
+    pass
 
 
 class InventoryState(BaseState):
-    def __init__(self):
-        super().__init__(state=State.INVENTORY)
+    """State when player is looking at their list of rows, but haven't selected a row."""
+    pass
 
 
 class RowState(BaseState):
-    def __init__(self, row_index):
-        super().__init__(state=State.ROW)
-        self.row_index = row_index
+    """State when player is looking at a specific row. Stores current Row."""
+    def __init__(self, session_row: Row):
+        self.session_row: Row = session_row
 
 
 class CardState(BaseState):
-    def __init__(self, row_index, card_index):
-        super().__init__(state=State.CARD)
-        self.row_index = row_index
-        self.card_index = card_index
+    """State when player is looking at a card they own. Stores current row and card."""
+    def __init__(self, session_row: Row, session_card: Card):
+        # Technically we can get the row from the card object, but this makes things easier
+        # If slowdown is noticeable may remove this, but i doubt it
+        self.session_row: Row = session_row
+        self.session_card: Card = session_card
 
 
 class ShopMenuState(BaseState):
-    def __init__(self):
-        super().__init__(state=State.SHOP_MENU)
+    """State when player is looking at the list of Shops, but has not selected one yet."""
+    pass
 
 
 class ShopState(BaseState):
-    def __init__(self, shop_id):
-        super().__init__(state=State.SHOP)
-        self.shop_id = shop_id
+    """State when player is looking at a specific shop. Stores the shop they are looking at."""
+    def __init__(self, shop: Shop):
+        self.shop: Shop = shop
 
 
 class ShopCardState(BaseState):
-    def __init__(self, shop_id, card_index):
-        super().__init__(state=State.SHOP_CARD_EXAMINE)
-        self.shop_id = shop_id
-        self.card_index = card_index
+    """State when the player is looking at a specific card in a shop.
+       Stores the Shop and the ShopListing (that contains card information)"""
+    def __init__(self, session_shop: Shop, session_card: ShopListing):
+        self.shop: Shop = session_shop
+        self.card: ShopListing = session_card
 
 
-def get_player_state(discord_id: int):
+class ShopCardSelectRowState(BaseState):
+    """State when player has bought a card and needs to place it in """
+    def __init__(self, session_shop: Shop, session_card: ShopListing):
+        self.shop: Shop = session_shop
+        self.card: ShopListing = session_card
+
+
+def get_player_state(player_id: int):
+    """Returns the current player state. Accounts for state timeouts and reverts the player to default if timed out."""
     try:
-        if time.time() - player_states[discord_id]['time'] > STATE_TIMEOUT:
-            player_states[discord_id] = State.DEFAULT
-            return State.DEFAULT
-        return player_states[discord_id]['state']
+        if time.time() - player_states[player_id]['time'] > STATE_TIMEOUT:
+            player_states[player_id] = {'state': DefaultState(), 'time': time.time()}
+        return player_states[player_id]['state']
     except KeyError:
-        player_states[discord_id] = {'state': DefaultState(), 'time': time.time()}
-        return player_states[discord_id]['state']
+        player_states[player_id] = {'state': DefaultState(), 'time': time.time()}
+        return player_states[player_id]['state']
 
 
-def set_player_state(discord_id: int, new_state: BaseState):
-    player_states[discord_id] = {'state': new_state, 'time': time.time()}
+def set_player_state(player_id: int, new_state: BaseState):
+    player_states[player_id] = {'state': new_state, 'time': time.time()}
+    print(f'Set {player_id} to state {player_states[player_id]["state"]}')

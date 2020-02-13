@@ -1,7 +1,8 @@
 import discord
 import asyncio
-import bot_utils
-import player
+from utils import bot_utils
+from game_objects import player
+
 DEFAULT_MESSAGE_DELAY = 2
 
 """

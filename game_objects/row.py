@@ -1,5 +1,8 @@
-from card import Card, card_id_to_specific
-import card_type_utils as ctu
+from . import card
+import cards
+from utils import card_type_utils as ctu
+from typing import List
+
 ROW_WINDOW_WIDTH = 40
 DEFAULT_MAX_CARDS = 8
 
@@ -53,25 +56,29 @@ class Row:
         # return self.cursor.fetchone()[0]
         return DEFAULT_MAX_CARDS
 
-    def get_card(self, index: int) -> Card:
+    def get_card(self, index: int) -> card.Card:
         sqlstr = '''SELECT id FROM Card
                     WHERE Card.row_index=:r_index
                     AND Card.row_id=:rid;'''
         self.cursor.execute(sqlstr, {'r_index': index, 'rid': self.id})
-        card_id = self.cursor.fetchone()[0]
-        return card_id_to_specific(self.conn, card_id)
+        card_id: int = self.cursor.fetchone()[0]
+        return cards.get_card(card_id, self.conn)
 
-    def get_all_cards(self) -> list:
+    def get_all_cards(self) -> List[card.Card]:
         """Return all cards in ascending order"""
         sqlstr = '''SELECT id FROM Card
                     WHERE Card.row_id=:rid
                     ORDER BY Card.row_index ASC;'''
         self.cursor.execute(sqlstr, {'rid': self.id})
-        return [card_id_to_specific(self.conn, i[0]) for i in self.cursor.fetchall()]
+        return [cards.get_card(i[0], self.conn) for i in self.cursor.fetchall()]
+
+    def remaining_slots(self) -> int:
+        """Returns number of open slots for cards"""
+        return self.get_max_cards() - self.get_current_length()
 
     # Add card to row. Throws RowFullError if row full.
     # Also sets up parameters and defaults.
-    def add_card(self, type_name: str) -> Card:
+    def add_card(self, type_name: str) -> card.Card:
         # Find curr length of row, so we can insert after it
         curr_length = self.get_current_length()
         if curr_length >= self.get_max_cards():
