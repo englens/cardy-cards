@@ -3,6 +3,7 @@ import cards
 from utils import card_type_utils as ctu
 from typing import List
 
+
 ROW_WINDOW_WIDTH = 40
 DEFAULT_MAX_CARDS = 8
 
@@ -76,6 +77,7 @@ class Row:
         """Returns number of open slots for cards"""
         return self.get_max_cards() - self.get_current_length()
 
+
     # Add card to row. Throws RowFullError if row full.
     # Also sets up parameters and defaults.
     def add_card(self, type_name: str) -> card.Card:
@@ -119,7 +121,7 @@ class Row:
         """Remove a card from the row, deleting it from the database."""
         self.get_card(index).delete()
 
-    def render(self):
+    def render(self) -> str:
         alias = self.get_alias()
         # Done this way in case theres no alias
         if alias is None:

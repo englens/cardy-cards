@@ -3,6 +3,7 @@ from . import shop
 from . import card
 from sqlite3 import DatabaseError
 from typing import List
+
 DEFAULT_NO_ROWS = 1
 PLAYER_WINDOW_WIDTH = 40
 
@@ -65,12 +66,14 @@ class Player:
         sqlstr = '''SELECT Row.id, Row.player_index
                     FROM Row
                         JOIN Player ON Player.id = Row.player_id
-                    WHERE Player.id=:sql_id;
+                    WHERE Player.id=:sql_id
+                    ORDER BY Row.player_index;
                  '''
         self.cursor.execute(sqlstr, {'sql_id': self.id})
         results = self.cursor.fetchall()
         ordered_rows = [row.Row(self.conn, a[0]) for a in sorted(results, key=lambda tup: tup[1])]
         return ordered_rows
+
 
     def get_row(self, index: int) -> row.Row:
         sqlstr = '''SELECT id FROM Row
@@ -174,6 +177,7 @@ class Player:
 
     def move_card_from_vault_to_row(self, row_index):
         # TODO
+        pass
     
     def delete_card_from_vault(self, session_card: card.Card):
         """Completely deletes card from vault, such that the player must re-earn it (buy, etc) to get it back."""

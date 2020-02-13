@@ -2,8 +2,6 @@ from collections import namedtuple
 from typing import List
 import time
 
-ParamType = namedtuple('ParamType', ['name', 'val_default', 'max_default', 'visible_default', 'card_type'])
-
 
 class Param:
     """Represents one card parameter. Can access parameter:
@@ -101,7 +99,7 @@ class Card:
         return self.cursor.fetchone()[0]
 
     def get_class_name(self) -> str:
-        sqlstr = '''SELECT class_name 
+        sqlstr = '''SELECT class_name
                     FROM CardType
                         JOIN Card ON Card.card_type_id=CardType.id
                     WHERE Card.id=:id;'''
@@ -129,7 +127,7 @@ class Card:
         sqlstr = '''SELECT description
                     FROM CardType
                         JOIN Card on Card.card_type_id=CardType.id
-                    WHERE Card.id=:id
+                    WHERE Card.id=:id;
                  '''
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
@@ -203,7 +201,8 @@ class Card:
         self.conn.commit()
 
     def render(self) -> str:
-        return render_card(self.get_art(), self.get_name(), self.get_rarity(), self.get_description(), self.get_all_params())
+        return render_card(self.get_art(), self.get_name(), self.get_rarity(),
+                           self.get_description(), self.get_all_params())
 
 
 def render_card(art: str, name: str, rarity: str, desc: str, params: list) -> str:

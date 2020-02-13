@@ -1,6 +1,7 @@
 import discord
 import sqlite3
 import traceback
+
 import game_objects.player as player
 import bot_commands.commands as commands
 import cards
@@ -9,6 +10,7 @@ from utils import card_type_utils
 Module Description:
     Main module containing code entrypoint and general program administration. Also handles bot setup and events.
 """
+
 
 # CONSTANTS
 BOT_ID = ''
