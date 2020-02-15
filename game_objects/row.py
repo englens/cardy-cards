@@ -23,6 +23,9 @@ class Row:
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
+    def has_room(self) -> bool:
+        return self.remaining_slots() > 0
+
     def delete(self):
         for card in self.get_all_cards():
             card.delete()

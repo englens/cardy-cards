@@ -111,9 +111,7 @@ async def buy_command(message: discord.Message, session_player: player.Player, c
         await message.channel.send('Nothing to buy from this game state.')
         return
     # ---------------
-    # Attempt to pay
-    # TODO: change this to a check, and actually try to pay after selecting a row
-    # OR: Implement Card Vault
+
     response = session_player.try_pay(session_card.get_price_name(), session_card.get_price())
     if response is None:
         await message.channel.send(f'Not enough {session_card.get_price_name()} to pay cost.')
@@ -121,7 +119,10 @@ async def buy_command(message: discord.Message, session_player: player.Player, c
 
     await message.channel.send(f'Bought [{session_card.get_card_type_name()}]!')
     await asyncio.sleep(1)
-    msg = 'Please !select a row to insert new Card into, or !cancel to place it in the Vault:\n' + session_player.render()
+    msg = '''Please !select an option:
+             1 - Place card into a Row
+             2 - Place card into your Card Vault'''
+
     await message.channel.send(msg)
     p_state.set_player_state(session_player.id, p_state.ShopCardSelectRowState(state.shop, session_card))
 
@@ -150,30 +151,14 @@ async def select_command(message: discord.Message, session_player: player.Player
     elif isinstance(state, p_state.ShopState):  # Browsing 1 shop
         await shop_card_command(message, session_player, param1)
     elif isinstance(state, p_state.ShopCardSelectRowState):
-        await shop_card_select_row(message, session_player, param1)
+        await use_command_cases.buy_select_row(message, session_player, param1)
+    elif isinstance(state, p_state.BuySelectVaultOrRow):
+        await use_command_cases.buy_select_vault_or_row(message, session_player, param1)
     else:
         await message.channel.send('Nothing to select')
 
 
-async def shop_card_select_row(message: discord.Message, session_player: player.Player, row_index: int):
-    state = p_state.get_player_state(session_player.id)
-    assert isinstance(state, p_state.ShopCardSelectRowState)
-    try:
-        session_row = session_player.get_row(row_index)
-    except Exception:
-        await message.channel.send('Invalid Row Index.')
-        return
-    if session_row.remaining_slots() <= 0:
-        await message.channel.send('Selected Row full; please select another Row or make room.')
-    # ----------
-    card_name = state.card.get_card_type_name()
-    session_row.add_card(card_name)
-    await message.channel.send(f'[{card_name}] added to Row {session_row.get_index()}')
-    await asyncio.sleep(2)
-    await message.channel.send('Returning to shop...')
-    await asyncio.sleep(1)
-    await message.channel.send(state.shop.render())
-    p_state.set_player_state(session_player.id, p_state.ShopState(state.shop))
+
 
 
 async def help_command(message: discord.Message, session_player: player.Player):

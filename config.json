@@ -1,4 +1,4 @@
 {
     "defaultDBPath" : "test_db.sqlite",
-    "defaultCardsPath" : "./Cards"
+    "defaultCardsPath" : "./card_classes"
 }

@@ -71,6 +71,12 @@ class ShopCardSelectRowState(BaseState):
         self.card: ShopListing = session_card
 
 
+class PlaceCardVaultOrRowFromShop(BaseState):
+    """Player has bought and payed for a card, and needs to choose to place it into a row or into the vault"""
+    def __init__(self, session_shop: Shop, card_type_id: int):
+        self.shop = session_shop
+        self.card_id = card_type_id
+
 def get_player_state(player_id: int):
     """Returns the current player state. Accounts for state timeouts and reverts the player to default if timed out."""
     try:

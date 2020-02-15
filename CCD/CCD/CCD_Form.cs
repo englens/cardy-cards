@@ -25,8 +25,7 @@ namespace CCD
 |                                  |
 |                                  |
 |                                  |
-\----------------------------------/
-";
+\----------------------------------/";
         public string BasePath = "../../../../"; //Path up to root cardy cards dir
         public string lastArt;
         private bool isArtChangedSelfTriggered;
@@ -61,6 +60,19 @@ namespace CCD
             cardDB.Open();
         }
 
+        bool IsCardAlreadyInDatabase(string cardTypeName, string className)
+        {
+            string query = @"SELECT EXISTS(
+                                    SELECT 1 FROM CardType
+                                    WHERE CardType.name=@name
+                                    OR CardType.class_name=@cname
+                             );";
+            SQLiteCommand command = new SQLiteCommand(query, cardDB);
+            command.Parameters.AddWithValue("@name", cardTypeName);
+            command.Parameters.AddWithValue("@cname", className);
+            return command.ExecuteScalar().ToString().Equals("0");            
+        }
+
         //ths function will take the data in the datagrid rows and put them in the query string to add to the DB
         void fillParamType()
         {
@@ -80,7 +92,7 @@ namespace CCD
                 if (row.Cells[0].Value != null)
                 {
                     //add to the query the data from the cells and the card id from before
-                    query += "insert into ParamType (name, value_default, max_default, visible_default, card_type) values (\"" +
+                    query += "insert into ParamType (name, value_default, max_default, visible_default, card_type_id) values (\"" +
                     row.Cells[0].Value + "\",\"" +
                     row.Cells[1].Value + "\",\"" +
                     row.Cells[2].Value + "\",\"" +
@@ -149,7 +161,7 @@ class " + classInput.Text + @"(Card):
             }
 
         }
-        private bool ValidateData()
+        private bool DataValid()
         {
             if(classInput.Text.Length == 0 ||
                rarityInput.Text.Length == 0 ||
@@ -162,6 +174,8 @@ class " + classInput.Text + @"(Card):
         //we call the functions here when submit is presed
         private void SubmitButton_Click(object sender, EventArgs e)
         {
+            connectToDB();
+            
             //we wanna make sure the card submitted has the correct format before submitting
             if (artBox.Text.Length != baseArt.Length)
             {
@@ -170,13 +184,18 @@ class " + classInput.Text + @"(Card):
             }
 
             //Make sure the user actually entered data
-            if (!ValidateData())
+            if (!DataValid())
             {
                 MessageBox.Show("Error: Improper Data field(s)");
                 return;
             }
 
-            connectToDB();
+            if (!IsCardAlreadyInDatabase(nameInput.Text, classInput.Text))
+            {
+                MessageBox.Show("Card with that name or class name already in database.");
+                return;
+            }
+
             fillCardType();
             fillParamType();
             createPyClass();

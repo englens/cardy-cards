@@ -14,23 +14,9 @@ class Player:
         self.conn = sql_connection
         self.cursor = self.conn.cursor()
         self.id = sql_id
-        # State Param: list of information to fully describe the state.
-        # Dependant on state
-        self.state_param = [0]
 
     def __eq__(self, other):
         return self.id == other.id and type(self) == type(other)
-
-    def validate(self) -> bool:
-        """Ensures a data entry exists. otherwise throw SqlNotFoundError"""
-        sqlstr = '''SELECT EXISTS
-                    (
-                        SELECT 1 FROM Player 
-                        WHERE Player.id=:sql_id
-                    );
-                 '''
-        self.cursor.execute(sqlstr, {'sql_id': self.id})
-        return self.cursor.fetchone()[0]
 
     def get_name(self) -> str:
         """Returns the player's in-game name."""
@@ -74,7 +60,6 @@ class Player:
         ordered_rows = [row.Row(self.conn, a[0]) for a in sorted(results, key=lambda tup: tup[1])]
         return ordered_rows
 
-
     def get_row(self, index: int) -> row.Row:
         sqlstr = '''SELECT id FROM Row
                     WHERE Row.player_index=:p_index
@@ -107,10 +92,10 @@ class Player:
         name = self.get_name()
         no_dashes = PLAYER_WINDOW_WIDTH - len(name) - 8
         render = '-' * (no_dashes // 2) + ' ' + name + ' ' + '-' * (no_dashes // 2) + '\n'
-        for i, row in enumerate(self.get_all_rows_ordered()):
+        for i, r in enumerate(self.get_all_rows_ordered()):
             render += str(i) + ' | '
-            for card in row.get_all_cards():
-                render += card.get_name() + ' , '
+            for c in r.get_all_cards():
+                render += c.get_name() + ' , '
             render = render[:-2]  # remove the last comma
             render += '\n'
         render += '-' * (no_dashes + 5)
@@ -163,7 +148,7 @@ class Player:
 
     def get_cards_in_vault(self) -> dict:
         """Returns a dict of names of cards in vault, and count for each."""
-        sqlstr = '''SELECT name FROM CardType
+        sqlstr = '''SELECT CardType.name, CardVault.amount FROM CardType
                     JOIN CardVault ON CardVault.card_type_id=CardType.id
                     WHERE CardVault.player_id=:id;'''
         self.cursor.execute(sqlstr, {'id': self.id})
@@ -175,10 +160,43 @@ class Player:
                 hits[a[0]] = 1
         return hits
 
-    def move_card_from_vault_to_row(self, row_index):
-        # TODO
-        pass
-    
+    def get_card_type_amount_in_vault(self, card_type_id):
+        sqlstr = '''SELECT amount 
+                    FROM Row
+                    WHERE card_type_id = :c_id
+                    AND player_id = :p_id;'''
+        self.cursor.execute(sqlstr, {'c_id': card_type_id, 'p_id': self.id})
+        data = self.cursor.fetchone()
+        if len(data) == 0:
+            return 0
+        return data[0]
+
+    def move_card_from_vault_to_row(self, row_index: int, card_type_id: int) -> str:
+        """Checks card vault for instance of card_type, and decrements it if exists.
+            If this works, adds a new Card instance to row specified.
+            :return - One of vault_empty, no_space, success, describing the result of the action"""
+        session_row = self.get_row(row_index)
+        if self.get_card_type_amount_in_vault(card_type_id) <= 0:
+            return 'vault_empty'
+        if not session_row.has_room():
+            return 'no_space'
+        return 'success'
+
+    def add_card_to_vault(self, card_type_id: int):
+        """Searches the database either adding a new entry for that card type or incrementing the amount column"""
+        old_amount = self.get_card_type_amount_in_vault(card_type_id)
+        if old_amount == 0:
+            sqlstr = '''INSERT INTO CardVault (card_type_id, player_id, amount)
+                        VAULES (:c_id, :p_id, :amt);'''
+
+        else:
+            sqlstr = '''UPDATE CardVault
+                        SET amount = :amt
+                        WHERE card_type_id = :c_id
+                        AND player_id = :p_id;'''
+        self.cursor.execute(sqlstr, {'c_id': card_type_id, 'p_id': self.id, 'amt': old_amount+1})
+        self.conn.commit()
+
     def delete_card_from_vault(self, session_card: card.Card):
         """Completely deletes card from vault, such that the player must re-earn it (buy, etc) to get it back."""
         sqlstr = """DELETE FROM CardVault
