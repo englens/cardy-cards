@@ -59,23 +59,24 @@ class ShopState(BaseState):
 class ShopCardState(BaseState):
     """State when the player is looking at a specific card in a shop.
        Stores the Shop and the ShopListing (that contains card information)"""
-    def __init__(self, session_shop: Shop, session_card: ShopListing):
+    def __init__(self, session_shop: Shop, listing: ShopListing):
         self.shop: Shop = session_shop
-        self.card: ShopListing = session_card
+        self.listing: ShopListing = listing
 
 
-class ShopCardSelectRowState(BaseState):
+class BuySelectRowState(BaseState):
     """State when player has bought a card and needs to place it in """
-    def __init__(self, session_shop: Shop, session_card: ShopListing):
-        self.shop: Shop = session_shop
-        self.card: ShopListing = session_card
+    def __init__(self, session_shop: Shop, listing: ShopListing):
+        self.session_shop: Shop = session_shop
+        self.listing: ShopListing = listing
 
 
-class PlaceCardVaultOrRowFromShop(BaseState):
+class BuyPlaceCardVaultOrRow(BaseState):
     """Player has bought and payed for a card, and needs to choose to place it into a row or into the vault"""
-    def __init__(self, session_shop: Shop, card_type_id: int):
-        self.shop = session_shop
-        self.card_id = card_type_id
+    def __init__(self, session_shop: Shop, listing: ShopListing):
+        self.session_shop: Shop = session_shop
+        self.listing: ShopListing = listing
+
 
 def get_player_state(player_id: int):
     """Returns the current player state. Accounts for state timeouts and reverts the player to default if timed out."""

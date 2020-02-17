@@ -6,7 +6,7 @@ from . import debug_commands
 from game_objects import player
 from .tutorial import tutorial
 from utils import debug_utils, bot_utils
-
+from . import select_command_cases
 import player_state as p_state
 
 """
@@ -100,7 +100,7 @@ async def buy_command(message: discord.Message, session_player: player.Player, c
         if card_index is not None:
             await message.channel.send('Improper format: buy index not needed when examining a Card listing.')
             return
-        session_card = state.card
+        session_card = state.listing
     elif isinstance(state, p_state.ShopState):
         if card_index is None:
             await message.channel.send('Improper format: Please supply an index or !examine a Card listing first.')
@@ -124,7 +124,7 @@ async def buy_command(message: discord.Message, session_player: player.Player, c
              2 - Place card into your Card Vault'''
 
     await message.channel.send(msg)
-    p_state.set_player_state(session_player.id, p_state.ShopCardSelectRowState(state.shop, session_card))
+    p_state.set_player_state(session_player.id, p_state.BuySelectRowState(state.shop, session_card))
 
 
 async def use_command(message: discord.Message, session_player: player.Player):
@@ -150,18 +150,15 @@ async def select_command(message: discord.Message, session_player: player.Player
         await shop_command(message, session_player, param1)
     elif isinstance(state, p_state.ShopState):  # Browsing 1 shop
         await shop_card_command(message, session_player, param1)
-    elif isinstance(state, p_state.ShopCardSelectRowState):
-        await use_command_cases.buy_select_row(message, session_player, param1)
-    elif isinstance(state, p_state.BuySelectVaultOrRow):
-        await use_command_cases.buy_select_vault_or_row(message, session_player, param1)
+    elif isinstance(state, p_state.BuySelectRowState):
+        await select_command_cases.buy_select_row(message, session_player, param1)
+    elif isinstance(state, p_state.BuyPlaceCardVaultOrRow):
+        await select_command_cases.buy_select_vault_or_row(message, session_player, param1, state)
     else:
         await message.channel.send('Nothing to select')
 
 
-
-
-
-async def help_command(message: discord.Message, session_player: player.Player):
+async def help_command(message: discord.Message, session_player: player.Player, show_all: bool = False):
     """Displays a list of commands possible for the current state"""
     pass
     # TODO: Show general help menu, and state specific help if applicable

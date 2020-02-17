@@ -21,6 +21,13 @@ class ShopListing:
         self.cursor.execute(sqlstr, {'id': self.id})
         return self.cursor.fetchone()[0]
 
+    def get_card_type_id(self) -> int:
+        sqlstr = '''SELECT CardType.id FROM CardType
+                    JOIN ShopListing ON ShopListing.card_type_id=CardType.id
+                    WHERE ShopListing.id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        return self.cursor.fetchone()[0]
+
     def get_card_render(self) -> str:
         sqlstr = '''SELECT CardType.art, CardType.name, CardType.rarity, CardType.description
                     FROM CardType

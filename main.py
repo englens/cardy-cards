@@ -69,9 +69,20 @@ async def on_message(message: discord.Message):
             await commands.use_command(message, session_player)
         elif command == 'select':
             if len(terms) == 2:
-                await commands.select_command(message, session_player, int(terms[0]), int(terms[1]))
+                try:
+                    t1 = int(terms[0])
+                    t2 = int(terms[1])
+                except ValueError:
+                    message.channel.send('!select parameters must be integers.')
+                    return
+                await commands.select_command(message, session_player, t1, t2)
             else:
-                await commands.select_command(message, session_player, int(terms[0]))
+                try:
+                    t1 = int(terms[0])
+                except ValueError:
+                    message.channel.send('!select parameters must be integers.')
+                    return
+                await commands.select_command(message, session_player, t1)
         elif command == 'card':
             await commands.card_command(message, session_player, terms[0], terms[1])
         elif command == 'help':
