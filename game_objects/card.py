@@ -73,7 +73,7 @@ class Card:
         return self.id == other.id and type(self) == type(other)
 
     # --- INTERFACE --- #
-    def passive(self, t: int, last_t: int):
+    def passive(self, message, t: int, last_t: int):
         """Called every time the card is used or displayed. Returns a string along
            the lines of 'Made 5 money since last checked'"""
         return ''

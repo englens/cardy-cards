@@ -142,13 +142,13 @@ namespace CCD
 
             //we create the text to file the script with
             //the uncomfortable text formatting is left this way on purpose, so that it looks programmatically clean in the py script
-            string pyText = @"import card
+            string pyText = @"from game_objects import card
 
-class " + classInput.Text + @"(Card):
+class " + classInput.Text + @"(card.Card):
     def use(self, message) -> str:
         raise NotImplementedError
     
-    def passive(self, message, t) -> str:
+    def passive(self, message, t, last_t) -> str:
         raise NotImplementedError
 ";
 
