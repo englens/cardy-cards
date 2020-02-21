@@ -28,3 +28,17 @@ D:\Programming\bots\cardy-cards\CCD\CCD\obj\Release\CCD.csproj.CoreCompileInputs
 D:\Programming\bots\cardy-cards\CCD\CCD\obj\Release\CCD.csproj.CopyComplete
 D:\Programming\bots\cardy-cards\CCD\CCD\obj\Release\CCD.exe
 D:\Programming\bots\cardy-cards\CCD\CCD\obj\Release\CCD.pdb
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\bin\Release\CCD.exe
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\bin\Release\CCD.pdb
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\bin\Release\Newtonsoft.Json.dll
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\bin\Release\System.Data.SQLite.dll
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\bin\Release\Newtonsoft.Json.xml
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\bin\Release\System.Data.SQLite.xml
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\bin\Release\System.Data.SQLite.dll.config
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\obj\Release\CCD.csprojAssemblyReference.cache
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\obj\Release\CCD.CCD.resources
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\obj\Release\CCD.Properties.Resources.resources
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\obj\Release\CCD.csproj.GenerateResource.cache
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\obj\Release\CCD.csproj.CopyComplete
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\obj\Release\CCD.exe
+C:\Users\Moist\Documents\Github\cardy-cards\CCD\CCD\obj\Release\CCD.pdb
