@@ -1,6 +1,7 @@
 import discord
 import sqlite3
 import traceback
+import time
 
 import game_objects.player as player
 import bot_commands.commands as commands
@@ -32,7 +33,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message: discord.Message):
-
+    t = int(time.time())
     # Checking for bots, non-commands or unregistered players
     if not message.content.startswith('!'):
         return
@@ -42,13 +43,14 @@ async def on_message(message: discord.Message):
         session_player = player.get_player(conn, message.author.id)
     except sqlite3.DatabaseError:
         if message.content == '!join':
-            await commands.player_creation(message, players_in_session, client, conn)
+            await commands.player_creation(message, players_in_session, client, conn, t)
         else:
             await message.channel.send('Please create an account with !join')
         return
 
     # Whole loop is wrapped in try block that logs errors before sending them up
     try:
+
         if session_player in players_in_session:
             return
         # Block player from being handled twice at once
@@ -62,9 +64,9 @@ async def on_message(message: discord.Message):
             else:
                 await commands.shop_menu_command(message, session_player)
         if command == 'inventory':
-            await commands.inventory_command(message, session_player)
+            await commands.inventory_command(message, session_player, t)
         elif command == 'row':
-            await commands.row_command(message, session_player, int(terms[0]))
+            await commands.row_command(message, session_player, t, int(terms[0]))
         elif command == 'use':
             await commands.use_command(message, session_player)
         elif command == 'select':
@@ -82,11 +84,16 @@ async def on_message(message: discord.Message):
                 except ValueError:
                     message.channel.send('!select parameters must be integers.')
                     return
-                await commands.select_command(message, session_player, t1)
+                await commands.select_command(message, session_player, t, t1)
         elif command == 'card':
-            await commands.card_command(message, session_player, terms[0], terms[1])
+            await commands.card_command(message, session_player, t, terms[0], terms[1])
         elif command == 'help':
             pass
+        elif command == 'buy':
+            if len(terms) == 0:
+                await commands.buy_command(message, session_player)
+            else:
+                await commands.buy_command(message, session_player, terms[0])
         elif command == 'debug':
             await commands.debug_command(message, session_player, terms, conn)
         else:
@@ -98,7 +105,7 @@ async def on_message(message: discord.Message):
         # TODO: Remove before going live, or implement a "last error" feature only i can see
         # or logging
         tb = traceback.format_exc()
-        await message.channel.send(tb)
+        await message.channel.send('```'+tb+'```')
         players_in_session.remove(session_player)
         raise e
 

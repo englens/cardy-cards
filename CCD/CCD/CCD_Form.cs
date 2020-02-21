@@ -39,8 +39,8 @@ namespace CCD
                 using (JsonTextReader reader = new JsonTextReader(file))
                 {
                     dynamic data = (JObject)JToken.ReadFrom(reader);
-                    DBTextBox.Text = data.defaultDBPath;
-                    ScriptLocTextBox.Text = data.defaultCardsPath;
+                    DBTextBox.Text = data.CCD.defaultDBPath;
+                    ScriptLocTextBox.Text = data.CCD.defaultCardsPath;
                 }
             }
             catch (FileNotFoundException)

@@ -1,4 +1,12 @@
 {
-    "defaultDBPath" : "test_db.sqlite",
-    "defaultCardsPath" : "./card_classes"
+    "CCD":
+    {
+        "defaultDBPath" : "test_db.sqlite",
+        "defaultCardsPath" : "./card_classes"
+    },
+    
+    "cardy-cards":
+    {
+        "master_db_path": "master_db.sqlite"
+    }
 }

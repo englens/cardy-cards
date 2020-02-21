@@ -23,7 +23,7 @@ def get_param_types(card_type_id: int, cursor: sqlite3.Cursor) -> list:
     """Returns a list of ParamType PKs for given card type"""
     sqlstr = '''SELECT id
                 FROM ParamType
-                WHERE card_type=:cid;'''
+                WHERE card_type_id=:cid;'''
     cursor.execute(sqlstr, {'cid': card_type_id})
     return [i[0] for i in cursor.fetchall()]
 

@@ -26,8 +26,10 @@ def import_cards(c_types: List[str]):
             raise e
 
 
-def get_card(card_id: int, sql_conn: Connection) -> Card:
+def get_card(card_id: int, sql_conn: Connection, t: int) -> Card:
     global card_classes
     print(card_classes)
     class_name = card_type_utils.get_card_type_class_from_card_id(card_id, sql_conn.cursor())
-    return card_classes[class_name](sql_conn, card_id)
+    card = card_classes[class_name](sql_conn, card_id)
+    card.update(t)
+    return card

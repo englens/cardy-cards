@@ -1,6 +1,4 @@
-from collections import namedtuple
 from typing import List
-import time
 
 
 class Param:
@@ -64,6 +62,7 @@ class Param:
 # Subclass me! Does nothing on its own.
 # These methods should handle all the sql; subclasses can just use them
 # Card classes should be used whenever cards are being worked with.
+# BIG NOTE: IF YOU STORE A CARD, UPDATE IT BEFORE USE. UPDATE IS ONLY CALLED ON GET CARD
 class Card:
     def __init__(self, sql_connection, sql_id: int):
         self.id = sql_id
@@ -74,7 +73,7 @@ class Card:
         return self.id == other.id and type(self) == type(other)
 
     # --- INTERFACE --- #
-    def passive(self, t=None):
+    def passive(self, t: int, last_t: int):
         """Called every time the card is used or displayed. Returns a string along
            the lines of 'Made 5 money since last checked'"""
         return ''
@@ -83,13 +82,49 @@ class Card:
     def use(self, message):
         """Does something when activated with !use."""
         return ''
+
+    def one_line_summary(self):
+        """A summary of the card when displayed in the row. By default, shows the value and name of each param.
+           May be overwritten if a different summary is more useful"""
+
+        """MoneyButton -- money:5"""
+        p_lines = []
+        for p in self.get_all_params():
+            if p.is_visible():
+                p_lines.append(p.get_name() + ':' + p.get_val())
+        return self.get_name() + ' -- ' + ', '.join(p_lines)
     # ------------------ #
 
-    def validate(self) -> bool:
-        sqlstr = '''SELECT EXISTS(SELECT 1 FROM Card WHERE id = :id);'''
-        self.cursor.execute(sqlstr, {'id': self.id})
-        return self.cursor.fetchone()[0]
+    def update(self, t: int):
+        """Runs passive, but only if t new.
+        This fixes unnecessary double updates when cards depend on the values of others.
+        """
+        last_t = self.get_last_t()
+        if t != last_t:
+            self.set_last_t(t)
+            return self.passive(t, last_t)
+        return None
 
+    # ---- Last_t interface ----
+    def get_last_t(self) -> int:
+        """Returns timestamp of last use."""
+        sqlstr = '''SELECT last_t
+                    FROM Card
+                    WHERE id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id})
+        try:
+            return self.cursor.fetchone()[0]
+        except IndexError:
+            return 0
+
+    def set_last_t(self, new_t: int):
+        sqlstr = '''UPDATE Card
+                    SET last_t=:newval
+                    WHERE Card.id=:id;'''
+        self.cursor.execute(sqlstr, {'id': self.id, 'newval': new_t})
+        self.conn.commit()
+
+    # ---- Basic Getters ----
     def get_name(self) -> str:
         sqlstr = '''SELECT name 
                     FROM CardType
@@ -144,12 +179,10 @@ class Card:
         self.cursor.execute(sqlstr, {'id': self.id})
         self.conn.commit()
 
+    # ---- Param Handling ----
     # THANK GOD FOR BLOBS
-    def get_param(self, param_name, t=None) -> Param:
-        if t is None:
-            t = time.time()
+    def get_param(self, param_name) -> Param:
         # Only compute passives right before grabbing them
-        self.passive(t)
         sqlstr = '''SELECT Param.id 
                     FROM Param
                         JOIN Card ON Card.id = Param.card_id
@@ -159,8 +192,8 @@ class Card:
         self.cursor.execute(sqlstr, {'name': param_name, 'id': self.id})
         return Param(self.cursor.fetchone()[0], self.conn)
 
-    def get_param_value(self, param_name, t=None):
-        return self.get_param(param_name, t).get_val()
+    def get_param_value(self, param_name):
+        return self.get_param(param_name).get_val()
 
     def get_card_type_id(self):
         sqlstr = '''SELECT card_type_id
@@ -200,6 +233,7 @@ class Card:
         self.cursor.execute(sqlstr, {'name': name, 'id': self.id, 'newval': new_value})
         self.conn.commit()
 
+    # --------------------
     def render(self) -> str:
         return render_card(self.get_art(), self.get_name(), self.get_rarity(),
                            self.get_description(), self.get_all_params())
@@ -215,7 +249,6 @@ def render_card(art: str, name: str, rarity: str, desc: str, params: list) -> st
     art_lines = art.split('\n')
     art_lines = [l[:-1] for l in art_lines[:-1]] + [art_lines[-1]]
     desc = desc.split('\n')
-
     # Header
     render_lines.append('+' + '-'*(pic_width-2) + '+')
     render_lines.append(r'| {}{}{} |'.format(name,

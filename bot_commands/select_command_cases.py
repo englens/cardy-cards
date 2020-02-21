@@ -27,7 +27,7 @@ async def buy_select_row(message: discord.Message, session_player: player.Player
     p_state.set_player_state(session_player.id, p_state.ShopState(state.session_shop))
 
 
-async def buy_select_vault_or_row(message: discord.Message, session_player: player.Player, choice: int,  state: p_state.BaseState):
+async def buy_select_vault_or_row(message: discord.Message, session_player: player.Player, t, choice: int,  state: p_state.BaseState):
     """Player has bought a card and has room in at least 1 row, and are now
        choosing to place it in the vault or in a row"""
     '''Before: Please !select an option:
@@ -35,7 +35,7 @@ async def buy_select_vault_or_row(message: discord.Message, session_player: play
              2 - Place card into your Card Vault'''
     assert isinstance(state, p_state.BuyPlaceCardVaultOrRow)
     if choice == 1:  # row
-        await message.channel.send('Please !select a row:\n' + session_player.render())
+        await message.channel.send('Please !select a row:\n' + session_player.render(t))
         p_state.set_player_state(session_player.id, p_state.BuySelectRowState(state.session_shop, state.listing))
     elif choice == 2:  # vault
         session_player.add_card_to_vault(state.listing.get_card_type_id())

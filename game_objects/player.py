@@ -2,7 +2,6 @@ from . import row
 from . import shop
 from . import card
 from sqlite3 import DatabaseError
-from typing import List
 
 DEFAULT_NO_ROWS = 1
 PLAYER_WINDOW_WIDTH = 40
@@ -60,13 +59,16 @@ class Player:
         ordered_rows = [row.Row(self.conn, a[0]) for a in sorted(results, key=lambda tup: tup[1])]
         return ordered_rows
 
-    def get_row(self, index: int) -> row.Row:
+    def get_row(self, index: int):
         sqlstr = '''SELECT id FROM Row
                     WHERE Row.player_index=:p_index
                     AND Row.player_id=:p_id;
                  '''
         self.cursor.execute(sqlstr, {'p_index': index, 'p_id': self.id})
-        row_id = self.cursor.fetchone()[0]
+        try:
+            row_id = self.cursor.fetchone()[0]
+        except TypeError:
+            return None
         return row.Row(self.conn, row_id)
 
     def add_row(self, alias=None) -> row.Row:
@@ -88,13 +90,13 @@ class Player:
         self.cursor.execute(sqlstr, {'p_id': self.id})
         return[shop.Shop(self.conn, a[0]) for a in self.cursor.fetchall()]
 
-    def render(self) -> str:
+    def render(self, t) -> str:
         name = self.get_name()
         no_dashes = PLAYER_WINDOW_WIDTH - len(name) - 8
         render = '-' * (no_dashes // 2) + ' ' + name + ' ' + '-' * (no_dashes // 2) + '\n'
         for i, r in enumerate(self.get_all_rows_ordered()):
             render += str(i) + ' | '
-            for c in r.get_all_cards():
+            for c in r.get_all_cards(t):
                 render += c.get_name() + ' , '
             render = render[:-2]  # remove the last comma
             render += '\n'

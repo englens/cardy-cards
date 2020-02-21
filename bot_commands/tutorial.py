@@ -11,7 +11,7 @@ Module Description:
 """
 
 
-async def tutorial(message, session_player: player.Player, client: discord.Client):
+async def tutorial(message, session_player: player.Player, client: discord.Client, t: int):
     channel = message.channel
     pinput = bot_utils.PInput(client, message)
     try:
@@ -20,7 +20,7 @@ async def tutorial(message, session_player: player.Player, client: discord.Clien
         await pinput.ask_loop('Lets look at that card I gave you.\n' +
                               'Pull up your inventory with !inventory.', ['!inventory'],
                               restated_question='Pull up your inventory with !inventory.')
-        await channel.send(session_player.render())
+        await channel.send(session_player.render(t))
         await channel.send('Your inventory is organised into rows, and each as several slots for storing cards. ' +
                            'As a new player, you only have 1 row.')
         await asyncio.sleep(DEFAULT_MESSAGE_DELAY)

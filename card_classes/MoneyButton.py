@@ -20,5 +20,5 @@ class MoneyButton(card.Card):
         else:
             await message.channel.send(f'Card on cooldown. {int(TIME_COOLDOWN-diff)} seconds remaining.')
 
-    def passive(self, t=None):
+    def passive(self, t, last_t):
         pass

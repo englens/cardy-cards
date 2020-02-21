@@ -27,7 +27,7 @@ class Row:
         return self.remaining_slots() > 0
 
     def delete(self):
-        for card in self.get_all_cards():
+        for card in self.get_all_cards(0):
             card.delete()
         sqlstr = '''DELETE FROM Row
                     WHERE Row.id = :id;'''
@@ -60,30 +60,35 @@ class Row:
         # return self.cursor.fetchone()[0]
         return DEFAULT_MAX_CARDS
 
-    def get_card(self, index: int) -> card.Card:
+    def get_card(self, index: int, t):
+
         sqlstr = '''SELECT id FROM Card
                     WHERE Card.row_index=:r_index
                     AND Card.row_id=:rid;'''
         self.cursor.execute(sqlstr, {'r_index': index, 'rid': self.id})
-        card_id: int = self.cursor.fetchone()[0]
-        return cards.get_card(card_id, self.conn)
+        try:
+            card_id: int = self.cursor.fetchone()[0]
+            return cards.get_card(card_id, self.conn, t)
+        except TypeError:
+            return None
 
-    def get_all_cards(self) -> List[card.Card]:
+    def get_all_cards(self, t) -> List[card.Card]:
         """Return all cards in ascending order"""
         sqlstr = '''SELECT id FROM Card
                     WHERE Card.row_id=:rid
                     ORDER BY Card.row_index ASC;'''
         self.cursor.execute(sqlstr, {'rid': self.id})
-        return [cards.get_card(i[0], self.conn) for i in self.cursor.fetchall()]
+        return [cards.get_card(i[0], self.conn, t) for i in self.cursor.fetchall()]
 
     def remaining_slots(self) -> int:
         """Returns number of open slots for cards"""
         return self.get_max_cards() - self.get_current_length()
 
-
     # Add card to row. Throws RowFullError if row full.
     # Also sets up parameters and defaults.
-    def add_card(self, type_name: str) -> card.Card:
+    def add_card(self, type_name: str, t=None):
+        """Create new card and add it to row. Throws RowFullError if row full.
+           Optionally Supply t to update the card and return it"""
         # Find curr length of row, so we can insert after it
         curr_length = self.get_current_length()
         if curr_length >= self.get_max_cards():
@@ -101,20 +106,20 @@ class Row:
             defaults = ctu.get_param_type_defaults(p_type, self.cursor)
             param_inserts.append({'val':  defaults['val'],
                                   'visible': defaults['visible'],
-                                  'max': defaults['max'],
                                   'max_val': defaults['max_val'],
                                   'c_id': card_id,
                                   't_id': p_type})
         # sql strings
 
-        param_sql = '''INSERT INTO Param (value, visible, max, card_id, type_id)
-                       VALUES (:val, :visible, :max_val :c_id, :t_id);'''
+        param_sql = '''INSERT INTO Param (value, visible, max, card_id, param_type_id)
+                       VALUES (:val, :visible, :max_val, :c_id, :t_id);'''
         # insert new rows to database
 
         card_id = self.cursor.lastrowid
         self.cursor.executemany(param_sql, param_inserts)
         self.conn.commit()
-        return self.get_card(curr_length)
+        if t is not None:
+            return cards.get_card(card_id, self.conn, t)
 
     # Plan:
     # 1 - throw err if card not found
@@ -122,25 +127,50 @@ class Row:
     # 3 - remove card row
     def remove_card(self, index):
         """Remove a card from the row, deleting it from the database."""
-        self.get_card(index).delete()
+        self.get_card(index, 0).delete()
 
-    def render(self) -> str:
+    def render(self, t) -> str:
+        from utils import render_utils
+        minimum_internal_width = 50
+        """Returns a string representation of Row
+                 Lines:
+                    |------------------------------|  divline, # dashes equal to the max width -2
+                    |       | Row N/Alias |        |  name_line, middle section centered
+                    |---+--------------------------|  divline,
+                    | 1 | card 1 summary           |  card_lines, left justified
+                    | n | card n summary           |
+                    |---+--------------------------|  divline
+                """
+        # setup row label -- alias if it exists, or row index otherwise
         alias = self.get_alias()
-        # Done this way in case theres no alias
         if alias is None:
-            a_len = 0
+            label = f'Row {self.get_index()}'
         else:
-            a_len = len(alias)
-        no_dashes = ROW_WINDOW_WIDTH - a_len - 8
-
-        render = '-'*(no_dashes//2) + 'Row ' + str(self.get_index()) + '-'*(no_dashes//2) + '\n'
-        if alias is not None:
-            render += '('+alias+')'
-        render += '--------------------------\n'
-        for i, card in enumerate(self.get_all_cards()):
-            render += f'{i}) {card.get_name()}\n'
-        render += '-'*no_dashes
-        return '```' + render + '```'
+            label = alias
+        # First pass -- internal lines
+        name_line_internal = f'  | {label} |  '
+        divline_internal = '---+'
+        card_lines_internal = []
+        for i, c in enumerate(self.get_all_cards(t)):
+            card_lines_internal.append(f' {i+1} | {c.one_line_summary()}   ')
+        # Find length of longest line for spacing
+        max_internal_len = max([len(c) for c in card_lines_internal])
+        max_internal_len = max(len(name_line_internal),
+                               minimum_internal_width,
+                               max_internal_len)
+        # Second pass -- full lines with proper spacing
+        topline = '|' + '-'*max_internal_len + '|'
+        divline = '|' + render_utils.space_text(divline_internal, 'right', max_internal_len, '-') + '|'
+        nameline = '|' + render_utils.space_text(name_line_internal, 'both', max_internal_len) + '|'
+        cardlines = []
+        for l in card_lines_internal:
+            cardlines.append('|' + render_utils.space_text(l, 'right', max_internal_len) + '|')
+        # Put it all together
+        output = topline + '\n' + nameline + '\n' + divline + '\n'
+        for l in cardlines:
+            output += l + '\n'
+        output += divline
+        return '```' + output + '```'
 
 
 class RowFilledError(Exception):
